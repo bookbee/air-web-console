@@ -1,0 +1,21 @@
+# Secrets first: `.env.local` holds real keys for whichever environments
+# this console is pointed at, plus the gateway token — must never be baked
+# into an image. docker-compose.yml passes it at container runtime instead
+# (env_file), and the one build-time value that's actually needed
+# (NEXT_PUBLIC_AIR_WEB_GATEWAY_TOKEN) arrives as a build arg, not this file.
+.env*
+!.env.example
+
+node_modules
+.next
+.git
+.github
+.vscode
+coverage
+*.log
+npm-debug.log*
+.DS_Store
+
+# Playwright/dev scratch — never meant to ship in an image.
+.walkthrough*.mjs
+.debug*.mjs

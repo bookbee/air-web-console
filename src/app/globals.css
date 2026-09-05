@@ -1,0 +1,23 @@
+html,
+body {
+  /* min-height, not height: a fixed height clamps <html>'s scrollHeight to
+     the viewport, which stops the document from growing past one screen
+     for taller pages (the sidebar's own height: 100vh doesn't need this —
+     it's independent). */
+  min-height: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Anything a developer copies verbatim — URLs, keys, JSON, request/response
+   bodies — reads as code, not prose, in every appearance mode. */
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
