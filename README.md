@@ -20,7 +20,7 @@ Four tabs, one per surface:
 
 | Tab | Service | What it does |
 | --- | --- | --- |
-| **Classifier** | air-classifier | `/v1/classify`, single and batch, plus tier probes |
+| **Classifier** | air-classifier | `/v1/classify` (single, batch, tier probes) and `/v1/summary/refresh` (stateless customer-summary rollup) |
 | **Platform** | air-platform | Both channels: `/v1/chat` and `/v1/query`, including SSE turns |
 | **LLM** | air-llm | `/v1/inference` — chat and embeddings, one endpoint |
 | **System** | all three | Health, readiness, capabilities, and a log of every call |
@@ -192,3 +192,8 @@ src/
   stateless per call (no `session_id`), so a genuine multi-turn exchange
   means resending the whole transcript every time — this mode builds that
   array by appending messages in the UI instead of hand-writing JSON.
+- The Classifier tab's **Summary** mode (`/v1/summary/refresh`) is stateless
+  the same way: the service stores nothing, so the response pane's "Use as
+  existing_summary for next call" button carries the returned `summary`
+  forward into the next request's box, one click at a time, instead of
+  hand-copying JSON between them.

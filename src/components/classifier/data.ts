@@ -18,6 +18,27 @@ export const EXAMPLES: readonly [string, string][] = [
   ["PII", "Call me on +44 7700 900123 or email sam.doe@example.com — still no refund."],
 ];
 
+export const SOURCE_TYPES = ["feedback", "review"] as const;
+export type SourceType = (typeof SOURCE_TYPES)[number];
+
+/** Straight from air-classifier's own README, the `/v1/summary/refresh`
+ * worked example — a quick way to see a real rollup+narrative without
+ * hand-typing items. */
+export const SUMMARY_EXAMPLE = {
+  customerId: "cust_482",
+  items: [
+    {
+      text: "The battery life is superb but the camera is a letdown.",
+      source_type: "review" as SourceType,
+      rating: 4,
+    },
+    {
+      text: "Support replied within minutes, very helpful team.",
+      source_type: "feedback" as SourceType,
+    },
+  ],
+};
+
 export interface TierProbe {
   tier: Tier;
   label: string;
