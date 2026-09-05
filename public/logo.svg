@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 220" width="100%" height="100%">
+  <defs>
+    <!-- Core Brand Gradient: Deep Navy to Electric Cyan -->
+    <linearGradient id="aiReadyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />  <!-- Indigo/Agent Layer -->
+      <stop offset="50%" stop-color="#2563EB" /> <!-- Blue/Middleware Layer -->
+      <stop offset="100%" stop-color="#06B6D4" /> <!-- Cyan/Execution Layer -->
+    </linearGradient>
+
+    <!-- Glowing Node Effect -->
+    <filter id="nodeGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Dark Enterprise Canvas -->
+  <rect width="600" height="220" fill="#0B0F19" rx="16"/>
+
+  <!-- ICON: The "AI-Ready" Dynamic Mark -->
+  <g transform="translate(50, 40)">
+    
+    <!-- Outer Modular 'A' Ribbon (App & System Layer) -->
+    <path d="M 20,130 L 65,30 C 70,20 80,15 90,20 L 100,25 C 110,30 112,42 105,52 L 75,115 C 70,125 58,132 45,130 Z" 
+          fill="url(#aiReadyGrad)" opacity="0.4"/>
+
+    <!-- Inner Active Flow Ribbon (The AI Orchestration Core) -->
+    <path d="M 30,120 C 40,70 70,40 100,35 C 120,32 135,42 130,60 C 122,85 85,95 55,100 M 55,100 C 85,100 130,110 145,80 C 150,70 152,50 140,40" 
+          fill="none" stroke="url(#aiReadyGrad)" stroke-width="8" stroke-linecap="round"/>
+
+    <!-- Three Floating Extension Nodes: RAG, Tools, Agents -->
+    <!-- 1. RAG Node (Top Left Knowledge) -->
+    <circle cx="100" cy="35" r="7" fill="#38BDF8" filter="url(#nodeGlow)"/>
+    <!-- 2. Tool Node (Center Right Execution) -->
+    <circle cx="145" cy="80" r="7" fill="#6366F1" filter="url(#nodeGlow)"/>
+    <!-- 3. Agent Node (Bottom Interconnect) -->
+    <circle cx="55" cy="100" r="6" fill="#34D399" filter="url(#nodeGlow)"/>
+
+    <!-- Connecting Micro-Circuit Lines -->
+    <line x1="100" y1="35" x2="145" y2="80" stroke="#38BDF8" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.6"/>
+    <line x1="145" y1="80" x2="55" y2="100" stroke="#6366F1" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.6"/>
+  </g>
+
+  <!-- TYPOGRAPHY: AIR Platform -->
+  <g transform="translate(230, 115)">
+    <!-- Main Title -->
+    <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" 
+          font-size="64" font-weight="900" letter-spacing="8" fill="#FFFFFF">
+      AIR
+    </text>
+    
+    <!-- Subtitle: Specifying Platform Status -->
+    <text x="5" y="32" font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif" 
+          font-size="13" font-weight="700" letter-spacing="6" fill="#38BDF8">
+      AI-READY PLATFORM
+    </text>
+  </g>
+</svg>
