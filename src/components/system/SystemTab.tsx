@@ -16,16 +16,16 @@ import { ProbePanel } from "./ProbePanel";
 export function SystemTab({
   classifier,
   llm,
-  platformCustomer,
-  platformBusiness,
+  orchestratorChat,
+  orchestratorQuery,
 }: {
   classifier: Connection;
   llm: Connection;
-  platformCustomer: Connection;
-  platformBusiness: Connection;
+  orchestratorChat: Connection;
+  orchestratorQuery: Connection;
 }) {
   const [channel, setChannel] = useState<"customer" | "business">("customer");
-  const platformConnection = channel === "customer" ? platformCustomer : platformBusiness;
+  const orchestratorConnection = channel === "customer" ? orchestratorChat : orchestratorQuery;
 
   return (
     <div>
@@ -35,7 +35,7 @@ export function SystemTab({
         unavailable explains most surprises.
       </Typography>
 
-      <SectionTitle>air-classifier</SectionTitle>
+      <SectionTitle>air-classifier-service</SectionTitle>
       <ProbePanel connection={classifier} slot="system-classifier" />
 
       <Divider sx={{ my: 3 }} />
@@ -45,9 +45,9 @@ export function SystemTab({
 
       <Divider sx={{ my: 3 }} />
 
-      <SectionTitle>air-platform</SectionTitle>
+      <SectionTitle>air-orchestrator-service</SectionTitle>
       <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-        The same probes against the platform base URL. <code>/v1/capabilities</code> answers per
+        The same probes against the air-orchestrator-service base URL. <code>/v1/capabilities</code> answers per
         channel — guardrails, routes and quotas are profile-specific — so the channel here is the
         key the probe is sent with.
       </Typography>
@@ -61,7 +61,7 @@ export function SystemTab({
         <ToggleButton value="customer">customer</ToggleButton>
         <ToggleButton value="business">business</ToggleButton>
       </ToggleButtonGroup>
-      <ProbePanel connection={platformConnection} slot={`system-platform-${channel}`} />
+      <ProbePanel connection={orchestratorConnection} slot={`system-orchestrator-${channel}`} />
 
       <Divider sx={{ my: 3 }} />
 

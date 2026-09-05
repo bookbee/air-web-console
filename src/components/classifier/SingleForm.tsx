@@ -58,7 +58,7 @@ export function SingleForm({ connection }: { connection: Connection }) {
   if (text.length > MAX_TEXT_CHARS) errors.push(`text is ${text.length} characters; the service caps it at ${MAX_TEXT_CHARS}.`);
   if (contextError) errors.push(contextError);
   if (metadataError) errors.push(metadataError);
-  if (!connection.baseUrl.trim()) errors.push("No air-classifier base URL set in the sidebar.");
+  if (!connection.baseUrl.trim()) errors.push("No air-classifier-service base URL set in the sidebar.");
 
   const body: Record<string, unknown> = { text, ...extras };
   if (context) body.context = context;

@@ -10,7 +10,7 @@ import { DataTable } from "@/components/shared/DataTable";
 
 /**
  * Health/readiness/capabilities summaries — ported from `tabs/system.py`.
- * air-classifier, air-platform and air-llm each answer `/v1/capabilities`
+ * air-classifier-service, air-orchestrator-service and air-llm each answer `/v1/capabilities`
  * and `/v1/ready` with a different shape, so these renderers follow
  * whichever fields the payload actually has rather than one service's
  * schema, exactly like the Python version.

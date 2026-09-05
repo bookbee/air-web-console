@@ -14,9 +14,9 @@ export interface Target {
   label: string;
   classifierBaseUrl: string;
   classifierApiKey: string;
-  platformBaseUrl: string;
-  platformCustomerKey: string;
-  platformBusinessKey: string;
+  orchestratorBaseUrl: string;
+  orchestratorCustomerKey: string;
+  orchestratorBusinessKey: string;
   llmBaseUrl: string;
   llmApiKey: string;
   /** Per-target TLS verification, server-only — never a client-supplied
@@ -37,9 +37,9 @@ export interface PublicTarget {
   label: string;
   classifierBaseUrl: string;
   classifierKeyed: boolean;
-  platformBaseUrl: string;
-  platformCustomerKeyed: boolean;
-  platformBusinessKeyed: boolean;
+  orchestratorBaseUrl: string;
+  orchestratorCustomerKeyed: boolean;
+  orchestratorBusinessKeyed: boolean;
   llmBaseUrl: string;
   llmKeyed: boolean;
 }

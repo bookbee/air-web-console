@@ -23,6 +23,14 @@ import { sendViaProxy } from "@/lib/http/client";
  * and colours anything that is not this machine, because the single most
  * expensive mistake this console can permit is sending a request to the
  * wrong environment.
+ *
+ * One row per *service*, not per connection: air-orchestrator-service holds two
+ * connections (customer/business channel, each its own key) but they share
+ * one base URL, and which channel a request uses is already a choice made
+ * in the Orchestrator tab's own radio buttons — repeating that choice here as a
+ * second row would just be the same destination stated twice. Each
+ * channel's keyed/no-key status still needs to be visible, so the merged
+ * row shows both inline instead of dropping one.
  */
 
 const HEALTH_PATH = "/v1/health";
@@ -78,7 +86,7 @@ function LocationChip({ connection }: { connection: Connection }) {
   );
 }
 
-function KeyChip({ connection }: { connection: Connection }) {
+function KeyChip({ connection, prefix }: { connection: Connection; prefix?: string }) {
   const theme = useTheme();
   const authenticated = isAuthenticated(connection);
   return (
@@ -95,6 +103,7 @@ function KeyChip({ connection }: { connection: Connection }) {
         color: authenticated ? theme.air.chip.key : theme.air.chip.nokey,
       }}
     >
+      {prefix ? `${prefix}: ` : ""}
       {authenticated ? "KEYED" : "NO KEY"}
     </Box>
   );
@@ -120,7 +129,21 @@ function ReachabilityDot({ result }: { result: ProbeResult | undefined }) {
   );
 }
 
-function TargetRow({ connection, result }: { connection: Connection; result: ProbeResult | undefined }) {
+/** One row per service. `connection` supplies the base URL/location every
+ * service row shows; `keyChips` lets a multi-key service (air-orchestrator-service)
+ * show more than one keyed/no-key indicator without repeating the whole
+ * row per key. */
+function ServiceTargetRow({
+  label,
+  connection,
+  keyChips,
+  result,
+}: {
+  label: string;
+  connection: Connection;
+  keyChips?: { prefix: string; connection: Connection }[];
+  result: ProbeResult | undefined;
+}) {
   return (
     <Box
       sx={{
@@ -134,31 +157,54 @@ function TargetRow({ connection, result }: { connection: Connection; result: Pro
       }}
     >
       <Typography component="span" sx={{ minWidth: "10rem", fontWeight: 600, fontFamily: "inherit" }}>
-        {connectionLabel(connection)}
+        {label}
       </Typography>
       <LocationChip connection={connection} />
       <Typography component="span" sx={{ fontFamily: "inherit" }}>
         {connection.baseUrl || "— no base URL —"}
       </Typography>
-      <KeyChip connection={connection} />
+      {keyChips ? (
+        keyChips.map((chip) => <KeyChip key={chip.prefix} connection={chip.connection} prefix={chip.prefix} />)
+      ) : (
+        <KeyChip connection={connection} />
+      )}
       <ReachabilityDot result={result} />
     </Box>
   );
 }
 
-export function TargetBar({ connections }: { connections: Connection[] }) {
+export function TargetBar({
+  classifier,
+  orchestratorChat,
+  orchestratorQuery,
+  llm,
+}: {
+  classifier: Connection;
+  orchestratorChat: Connection;
+  orchestratorQuery: Connection;
+  llm: Connection;
+}) {
   const [results, setResults] = useState<Record<string, ProbeResult>>({});
   const [checking, setChecking] = useState(false);
 
-  const remote = connections.some(isRemote);
-  const targetLabel = connections[0]?.targetLabel ?? "";
+  const allConnections = [classifier, orchestratorChat, orchestratorQuery, llm];
+  const remote = allConnections.some(isRemote);
+  const targetLabel = classifier.targetLabel;
 
+  // One probe per *service*: air-orchestrator-service's health endpoint needs no auth
+  // and both channels share one base URL, so probing it with either key
+  // answers for both — a second identical probe would tell us nothing new.
   const checkAll = async () => {
     setChecking(true);
     try {
-      const withUrls = connections.filter((c) => c.baseUrl.trim());
+      const candidates: [string, Connection][] = [
+        ["air-classifier-service", classifier],
+        ["air-orchestrator-service", orchestratorChat],
+        ["air-llm", llm],
+      ];
+      const toProbe = candidates.filter(([, connection]) => connection.baseUrl.trim());
       const entries = await Promise.all(
-        withUrls.map(async (connection) => [connectionLabel(connection), await probe(connection)] as const),
+        toProbe.map(async ([label, connection]) => [label, await probe(connection)] as const),
       );
       setResults(Object.fromEntries(entries));
     } finally {
@@ -198,9 +244,17 @@ export function TargetBar({ connections }: { connections: Connection[] }) {
             {remote ? "requests leave this machine" : "everything stays on this machine"}
           </Typography>
         </Box>
-        {connections.map((connection) => (
-          <TargetRow key={connectionLabel(connection)} connection={connection} result={results[connectionLabel(connection)]} />
-        ))}
+        <ServiceTargetRow label="air-classifier-service" connection={classifier} result={results["air-classifier-service"]} />
+        <ServiceTargetRow
+          label="air-orchestrator-service"
+          connection={orchestratorChat}
+          keyChips={[
+            { prefix: "customer", connection: orchestratorChat },
+            { prefix: "business", connection: orchestratorQuery },
+          ]}
+          result={results["air-orchestrator-service"]}
+        />
+        <ServiceTargetRow label="air-llm" connection={llm} result={results["air-llm"]} />
       </Box>
       <Button
         variant="outlined"

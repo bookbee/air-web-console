@@ -14,7 +14,7 @@ import { OptionRow } from "@/components/shared/OptionRow";
 import { parseJsonObject } from "@/lib/validators";
 
 /** air-llm's top-level fields — ported from `_optional_fields`. Unlike
- * air-classifier's and air-platform's `options` sub-object, every field
+ * air-classifier-service's and air-orchestrator-service's `options` sub-object, every field
  * here sits at the request's top level, since `InferenceRequest` has no
  * such wrapper — the payload builder in `LlmTab` merges these in flat. */
 export function OptionsEditor({

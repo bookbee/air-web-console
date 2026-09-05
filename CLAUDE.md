@@ -19,7 +19,7 @@ fourth variant.
 
 air-web-console is a Next.js (App Router) console for hand-testing,
 integrating with, and evaluating the AIR platform services —
-**air-classifier**, **air-platform**, **air-llm** — individually and as an
+**air-classifier-service**, **air-orchestrator-service**, **air-llm** — individually and as an
 integrated whole, against any environment (local/QA/staging).
 
 It is meant as a **reference BFF pattern** web developers can extend: an
@@ -71,7 +71,7 @@ through an unauthenticated `GET /api/config`. The fix, now in place:
   `GET /api/config` actually returns to the browser — base URLs stay (not
   secret, needed so the UI can state its destination plainly), every key
   becomes a `*_keyed: boolean`.
-- **The client names a target and, for air-platform, a channel — nothing
+- **The client names a target and, for air-orchestrator-service, a channel — nothing
   else.** `X-Target-Name` (+ `X-Target-Channel: customer|business`) are the
   only connection-shaped headers `src/app/api/_lib/serviceProxy.ts` reads.
   An unrecognized target name falls back to the server's configured
@@ -100,7 +100,7 @@ through an unauthenticated `GET /api/config`. The fix, now in place:
 **One Next.js app is both the frontend and the BFF.** `src/app/api/**` are
 Route Handlers acting as the proxy; everything else under `src/app`/
 `src/components` is the console UI. Three catch-all routes —
-`api/classifier/[...path]`, `api/platform/[...path]`, `api/llm/[...path]` —
+`api/classifier/[...path]`, `api/orchestrator/[...path]`, `api/llm/[...path]` —
 each pass their own `ServiceKind` literal into the one shared handler,
 `src/app/api/_lib/serviceProxy.ts`, built on `src/lib/http/proxy.ts`'s
 `forwardRequest`/`forwardStreamRequest`. Those two functions are the only
@@ -124,14 +124,14 @@ response pane is built from; `DashboardGrid`
 response *summary* is built from — extend a summary by adding rows to a
 `DashboardGrid`, not by inventing a new layout.
 
-**air-platform's SSE stream is collected, not piped live.** When a caller
+**air-orchestrator-service's SSE stream is collected, not piped live.** When a caller
 asks for the stream transport, `forwardStreamRequest` performs the real SSE
 request (`Accept: text/event-stream`, `event:`/`data:` frame parsing) but
 waits for the stream to close and returns one `Exchange` with all frames in
 `events` — the response pane has no incremental-render plumbing that a live
 stream would actually benefit from, so collecting once and rendering once
 is simpler than building that plumbing for no payoff. Client-side,
-`src/components/platform/events.ts`'s `foldEvents` reassembles those events
+`src/components/orchestrator/events.ts`'s `foldEvents` reassembles those events
 into the same shape a non-streamed `TurnResult` already has, so
 `TurnSummary` renders either identically.
 
@@ -141,7 +141,7 @@ several optional fields, treat "field absent" and "field explicitly set to
 its default" as different requests (an API key scoped to force
 `redact_pii: true` rejects an *explicit* `redact_pii: false` but accepts the
 same value arriving unspoken). So every `OptionsEditor` (classifier/
-platform/llm, one per tab) tracks an enabled-flag *and* a value per
+orchestrator/llm, one per tab) tracks an enabled-flag *and* a value per
 optional field; an unticked field is left out of the request body entirely
 rather than sent at its default. Do not "simplify" this into a plain form
 with default values — it changes what the real API sees.
@@ -152,7 +152,7 @@ toolchain can still `make up`. Inside the container `localhost` means the
 container, so `docker-compose.yml`'s `environment:` block re-points the
 `local` target's three base URLs at `host.docker.internal` (with
 `extra_hosts: host.docker.internal:host-gateway` for Linux) — verified
-end-to-end against a host-run air-classifier. `next.config.ts`'s `output:
+end-to-end against a host-run air-classifier-service. `next.config.ts`'s `output:
 "standalone"` is what makes the runtime image copy only a traced
 `node_modules` subset instead of the full tree. The one Docker-specific
 subtlety: `NEXT_PUBLIC_AIR_WEB_GATEWAY_TOKEN` must be a **build arg**, not

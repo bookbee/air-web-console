@@ -12,7 +12,7 @@ import Typography from "@mui/material/Typography";
 
 import { TIER_PROBES, TIERS, type TierProbe } from "./data";
 
-/** Force the ladder onto one named rung, reproducing air-classifier's own
+/** Force the ladder onto one named rung, reproducing air-classifier-service's own
  * README cases — ported from `_tier_probes`. Each button sets the text
  * (and, for one case, `rating`) plus `options.min_tier`/`max_tier` pinned
  * to the tier named, so the verdict cannot have come from anywhere else. */

@@ -31,7 +31,7 @@ type ItemsMode = "lines" | "json";
 
 /**
  * `POST /v1/summary/refresh` — stateless customer-summary refresh, ported
- * from air-classifier's own worked example. The caller owns storage: send
+ * from air-classifier-service's own worked example. The caller owns storage: send
  * back whatever `summary` a prior call returned as `existing_summary`, plus
  * only the newest items, and the rollup/narrative pick up where they left
  * off. This form keeps that round trip one click away — see "Use as
@@ -52,6 +52,7 @@ export function SummaryForm({ connection }: { connection: Connection }) {
     setCustomerId(SUMMARY_EXAMPLE.customerId);
     setItemsMode("json");
     setItemsJson(JSON.stringify(SUMMARY_EXAMPLE.items, null, 2));
+    setExistingSummaryRaw(JSON.stringify(SUMMARY_EXAMPLE.existingSummary, null, 2));
   };
 
   const { items, error: itemsError } = useMemo(() => {
@@ -82,7 +83,7 @@ export function SummaryForm({ connection }: { connection: Connection }) {
   if (itemsError) errors.push(itemsError);
   if (items.length === 0 && !itemsError) errors.push("Supply at least one item.");
   if (existingSummaryError) errors.push(existingSummaryError);
-  if (!connection.baseUrl.trim()) errors.push("No air-classifier base URL set in the sidebar.");
+  if (!connection.baseUrl.trim()) errors.push("No air-classifier-service base URL set in the sidebar.");
 
   const body: Record<string, unknown> = { customer_id: customerId.trim(), items };
   if (existingSummary) body.existing_summary = existingSummary;

@@ -5,7 +5,7 @@
 prefixes — all three names refer to the same project)*
 
 A Next.js console for hand-testing, integrating with, and evaluating the
-AIR platform services — **air-classifier**, **air-platform**, **air-llm** —
+AIR platform services — **air-classifier-service**, **air-orchestrator-service**, **air-llm** —
 individually and as an integrated whole. Send a request, read the decoded
 response, copy the cURL that reproduces it exactly.
 
@@ -20,8 +20,8 @@ Four tabs, one per surface:
 
 | Tab | Service | What it does |
 | --- | --- | --- |
-| **Classifier** | air-classifier | `/v1/classify` (single, batch, tier probes) and `/v1/summary/refresh` (stateless customer-summary rollup) |
-| **Platform** | air-platform | Both channels: `/v1/chat` and `/v1/query`, including SSE turns |
+| **Classifier** | air-classifier-service | `/v1/classify` (single, batch, tier probes) and `/v1/summary/refresh` (stateless customer-summary rollup) |
+| **Orchestrator** | air-orchestrator-service | Both channels: `/v1/chat` and `/v1/query`, including SSE turns |
 | **LLM** | air-llm | `/v1/inference` — chat and embeddings, one endpoint |
 | **System** | all three | Health, readiness, capabilities, and a log of every call |
 
@@ -35,7 +35,7 @@ make dev         # http://127.0.0.1:3000
 
 The demo gateway token and the `local` target both work as shipped — a
 fresh checkout needs no edits to run against sibling AIR services on their
-default ports (8081 air-platform, 8082 air-classifier, 8083 air-llm).
+default ports (8081 air-orchestrator-service, 8082 air-classifier-service, 8083 air-llm).
 
 ### Two ways to run it
 
@@ -77,7 +77,7 @@ containers) through the ports they publish on the host.
 
 Inside a container, `localhost` is the *container*, so `docker-compose.yml`
 re-points the `local` target's three base URLs at `host.docker.internal` —
-verified end-to-end against a host-run air-classifier on `:8082`. On Linux,
+verified end-to-end against a host-run air-classifier-service on `:8082`. On Linux,
 `extra_hosts: host.docker.internal:host-gateway` is what makes that
 resolve; start the host-side service with `HOST=0.0.0.0` there if it's
 bound to loopback only.
@@ -100,14 +100,14 @@ origin:
 ```
 Browser (NEXT_PUBLIC gateway token baked in — no upstream secrets, ever)
    │  Authorization: Bearer <gateway token>
-   │  X-Target-Name: local | qa | …      X-Target-Channel: customer|business (platform only)
+   │  X-Target-Name: local | qa | …      X-Target-Channel: customer|business (orchestrator only)
    ▼
 Next.js Route Handlers (BFF) — src/app/api/**
    │  1. checks the gateway token (this app's own front door)
    │  2. resolves {baseUrl, apiKey, verifyTls} from server-side .env,
    │     keyed by (service, target name[, channel]) — never from a client header
    ▼
-air-classifier / air-platform / air-llm   (real X-API-Key attached here, server-side only)
+air-classifier-service / air-orchestrator-service / air-llm   (real X-API-Key attached here, server-side only)
 ```
 
 - **The browser never holds, sends, or receives an upstream API key.**
@@ -152,9 +152,9 @@ Dockerfile, docker-compose.yml   local-dev-only container; see "In a container"
 src/
   app/
     api/
-      classifier/[...path]/route.ts   proxy to air-classifier
-      platform/[...path]/route.ts     proxy to air-platform (JSON + SSE)
-      llm/[...path]/route.ts          proxy to air-llm
+      classifier/[...path]/route.ts     proxy to air-classifier-service
+      orchestrator/[...path]/route.ts   proxy to air-orchestrator-service (JSON + SSE)
+      llm/[...path]/route.ts            proxy to air-llm
       config/route.ts                 redacted target catalogue, shipped to the client
       health/route.ts                 ungated liveness probe (Docker HEALTHCHECK)
       _lib/serviceProxy.ts            the shared, gateway-token-gated handler behind all three
@@ -163,7 +163,7 @@ src/
     layout/       Header, TargetBar
     sidebar/       Sidebar (read-only target picker + status)
     shared/        DashboardGrid, ResponseView, JsonViewer, SendRow, …
-    classifier/    platform/         llm/          system/
+    classifier/    orchestrator/     llm/          system/
   lib/
     config.ts      server-only .env parsing + resolveService()/toPublicDefaults()
     auth/          gatewayAuth.ts (server-only) + token.ts (pure, unit-tested)
@@ -180,7 +180,7 @@ src/
   render, never a thrown error from the BFF. A 401 from the gateway itself
   (bad/missing bearer token) is the one exception, and renders through the
   same problem-detail UI a real upstream 401 would.
-- air-platform's SSE turn stream is exercised for real (the `Accept:
+- air-orchestrator-service's SSE turn stream is exercised for real (the `Accept:
   text/event-stream` request, the `event:`/`data:` framing) but collected
   server-side into one `Exchange` before reaching the browser, since the
   response pane has no incremental-render plumbing that a live stream would

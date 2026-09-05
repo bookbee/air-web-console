@@ -145,8 +145,12 @@ export function Sidebar() {
 
       {target ? (
         <>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            air-classifier
+          <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+            air-classifier-service
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+            One key, one engine. Single, batch, and rolling-summary requests all share it — no
+            channel to choose.
           </Typography>
           <ServiceStatus
             label="Base URL"
@@ -158,7 +162,7 @@ export function Sidebar() {
           <Divider sx={{ my: 2 }} />
 
           <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-            air-platform
+            air-orchestrator-service
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
             Two channels, one engine. The channel comes from the <b>key</b>, not a header — each
@@ -166,14 +170,14 @@ export function Sidebar() {
           </Typography>
           <ServiceStatus
             label="Base URL · customer channel"
-            baseUrl={target.platformBaseUrl}
-            keyed={target.platformCustomerKeyed}
+            baseUrl={target.orchestratorBaseUrl}
+            keyed={target.orchestratorCustomerKeyed}
             route="/v1/chat"
           />
           <ServiceStatus
             label="Base URL · business channel"
-            baseUrl={target.platformBaseUrl}
-            keyed={target.platformBusinessKeyed}
+            baseUrl={target.orchestratorBaseUrl}
+            keyed={target.orchestratorBusinessKeyed}
             route="/v1/query"
           />
 

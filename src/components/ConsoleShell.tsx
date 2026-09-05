@@ -10,13 +10,13 @@ import { ClassifierTab } from "@/components/classifier/ClassifierTab";
 import { Header } from "@/components/layout/Header";
 import { TargetBar } from "@/components/layout/TargetBar";
 import { LlmTab } from "@/components/llm/LlmTab";
-import { PlatformTab } from "@/components/platform/PlatformTab";
+import { OrchestratorTab } from "@/components/orchestrator/OrchestratorTab";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { SystemTab } from "@/components/system/SystemTab";
 import { useConfig } from "@/hooks/useConfig";
 import { useConnections } from "@/store/connectionStore";
 
-const TAB_NAMES = ["Classifier", "Platform", "LLM", "System"] as const;
+const TAB_NAMES = ["Classifier", "Orchestrator", "LLM", "System"] as const;
 
 export function ConsoleShell() {
   const { hydrated } = useConfig();
@@ -37,12 +37,10 @@ export function ConsoleShell() {
       <Box sx={{ flex: 1, minWidth: 0, p: { xs: 1.5, md: 3 }, maxWidth: 1600, mx: "auto" }}>
         <Header />
         <TargetBar
-          connections={[
-            connections.classifier,
-            connections.platformCustomer,
-            connections.platformBusiness,
-            connections.llm,
-          ]}
+          classifier={connections.classifier}
+          orchestratorChat={connections.orchestratorChat}
+          orchestratorQuery={connections.orchestratorQuery}
+          llm={connections.llm}
         />
         <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
           {TAB_NAMES.map((name) => (
@@ -55,7 +53,7 @@ export function ConsoleShell() {
         </Box>
         <Box role="tabpanel" hidden={tab !== 1}>
           {tab === 1 && (
-            <PlatformTab customer={connections.platformCustomer} business={connections.platformBusiness} />
+            <OrchestratorTab chat={connections.orchestratorChat} query={connections.orchestratorQuery} />
           )}
         </Box>
         <Box role="tabpanel" hidden={tab !== 2}>
@@ -66,8 +64,8 @@ export function ConsoleShell() {
             <SystemTab
               classifier={connections.classifier}
               llm={connections.llm}
-              platformCustomer={connections.platformCustomer}
-              platformBusiness={connections.platformBusiness}
+              orchestratorChat={connections.orchestratorChat}
+              orchestratorQuery={connections.orchestratorQuery}
             />
           )}
         </Box>

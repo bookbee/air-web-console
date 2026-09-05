@@ -34,13 +34,13 @@ export const LOCAL_TARGET_NAME = "local";
  * client-held state**: nothing in this object ever reaches the browser.
  * The React app (everything under `src/components`) never sees, holds, or
  * sends any of these — only this Node.js server does, when it calls out to
- * air-classifier/air-platform/air-llm on the browser's behalf. That's the
+ * air-classifier-service/air-orchestrator-service/air-llm on the browser's behalf. That's the
  * whole point of the BFF: the "web client" is dumb by design, and a
  * backend process (this one) is what actually holds credentials, exactly
  * like any server calling another server would.
  *
  * The base URLs are the AIR port map (air-infra/README.md): 8081
- * air-platform, 8082 air-classifier, 8083 air-llm. The keys are the
+ * air-orchestrator-service, 8082 air-classifier-service, 8083 air-llm. The keys are the
  * literal development tokens the sibling air-* services' own
  * `.env.example` files provision for local development — kept
  * byte-for-byte so a fresh checkout authenticates with zero edits on
@@ -51,17 +51,17 @@ export const LOCAL_TARGET_NAME = "local";
 const LOCAL_TARGET_DEV_DEFAULTS = {
   classifierBaseUrl: "http://127.0.0.1:8082",
   classifierApiKey: "airc_local_dev_key",
-  platformBaseUrl: "http://127.0.0.1:8081",
-  platformCustomerKey: "airp_local_customer_key",
-  platformBusinessKey: "airp_local_business_key",
+  orchestratorBaseUrl: "http://127.0.0.1:8081",
+  orchestratorCustomerKey: "airp_local_customer_key",
+  orchestratorBusinessKey: "airp_local_business_key",
   llmBaseUrl: "http://127.0.0.1:8083",
   llmApiKey: "air-client-dev",
 } as const;
 
 export const DEFAULT_USD_TO_INR_RATE = 87.0;
 
-export type ServiceKind = "air-classifier" | "air-platform" | "air-llm";
-export type PlatformChannel = "customer" | "business";
+export type ServiceKind = "air-classifier-service" | "air-orchestrator-service" | "air-llm";
+export type OrchestratorChannel = "customer" | "business";
 
 export interface ResolvedService {
   baseUrl: string;
@@ -74,7 +74,7 @@ export interface ResolvedService {
 export function targetLocation(target: Target): Location {
   const legs = new Set<Location>([
     locationOf(target.classifierBaseUrl),
-    locationOf(target.platformBaseUrl),
+    locationOf(target.orchestratorBaseUrl),
     locationOf(target.llmBaseUrl),
   ]);
   if (legs.has("remote")) return "remote";
@@ -91,18 +91,18 @@ export function resolveService(
   defaults: Defaults,
   targetName: string,
   service: ServiceKind,
-  channel?: PlatformChannel,
+  channel?: OrchestratorChannel,
 ): ResolvedService {
   const target = defaults.targets[targetName] ?? defaults.targets[defaults.selected];
-  if (service === "air-classifier") {
+  if (service === "air-classifier-service") {
     return { baseUrl: target.classifierBaseUrl, apiKey: target.classifierApiKey, verifyTls: target.verifyTls };
   }
   if (service === "air-llm") {
     return { baseUrl: target.llmBaseUrl, apiKey: target.llmApiKey, verifyTls: target.verifyTls };
   }
   return {
-    baseUrl: target.platformBaseUrl,
-    apiKey: channel === "business" ? target.platformBusinessKey : target.platformCustomerKey,
+    baseUrl: target.orchestratorBaseUrl,
+    apiKey: channel === "business" ? target.orchestratorBusinessKey : target.orchestratorCustomerKey,
     verifyTls: target.verifyTls,
   };
 }
@@ -118,9 +118,9 @@ export function toPublicDefaults(defaults: Defaults): PublicDefaults {
       label: target.label,
       classifierBaseUrl: target.classifierBaseUrl,
       classifierKeyed: target.classifierApiKey.trim().length > 0,
-      platformBaseUrl: target.platformBaseUrl,
-      platformCustomerKeyed: target.platformCustomerKey.trim().length > 0,
-      platformBusinessKeyed: target.platformBusinessKey.trim().length > 0,
+      orchestratorBaseUrl: target.orchestratorBaseUrl,
+      orchestratorCustomerKeyed: target.orchestratorCustomerKey.trim().length > 0,
+      orchestratorBusinessKeyed: target.orchestratorBusinessKey.trim().length > 0,
       llmBaseUrl: target.llmBaseUrl,
       llmKeyed: target.llmApiKey.trim().length > 0,
     };
@@ -138,9 +138,9 @@ const TARGET_FIELDS = new Set([
   "LABEL",
   "CLASSIFIER_BASE_URL",
   "CLASSIFIER_API_KEY",
-  "PLATFORM_BASE_URL",
-  "PLATFORM_CUSTOMER_API_KEY",
-  "PLATFORM_BUSINESS_API_KEY",
+  "ORCHESTRATOR_BASE_URL",
+  "ORCHESTRATOR_CUSTOMER_API_KEY",
+  "ORCHESTRATOR_BUSINESS_API_KEY",
   "LLM_BASE_URL",
   "LLM_API_KEY",
   "VERIFY_TLS",
@@ -192,13 +192,13 @@ function buildLocal(fields: Record<string, string>, defaultVerifyTls: boolean): 
     label: fields.LABEL || "Local — services on this machine",
     classifierBaseUrl: fields.CLASSIFIER_BASE_URL || get("CLASSIFIER_BASE_URL", defaults.classifierBaseUrl),
     classifierApiKey: fields.CLASSIFIER_API_KEY || get("CLASSIFIER_API_KEY", defaults.classifierApiKey),
-    platformBaseUrl: fields.PLATFORM_BASE_URL || get("PLATFORM_BASE_URL", defaults.platformBaseUrl),
-    platformCustomerKey:
-      fields.PLATFORM_CUSTOMER_API_KEY ||
-      get("PLATFORM_CUSTOMER_API_KEY", defaults.platformCustomerKey),
-    platformBusinessKey:
-      fields.PLATFORM_BUSINESS_API_KEY ||
-      get("PLATFORM_BUSINESS_API_KEY", defaults.platformBusinessKey),
+    orchestratorBaseUrl: fields.ORCHESTRATOR_BASE_URL || get("ORCHESTRATOR_BASE_URL", defaults.orchestratorBaseUrl),
+    orchestratorCustomerKey:
+      fields.ORCHESTRATOR_CUSTOMER_API_KEY ||
+      get("ORCHESTRATOR_CUSTOMER_API_KEY", defaults.orchestratorCustomerKey),
+    orchestratorBusinessKey:
+      fields.ORCHESTRATOR_BUSINESS_API_KEY ||
+      get("ORCHESTRATOR_BUSINESS_API_KEY", defaults.orchestratorBusinessKey),
     llmBaseUrl: fields.LLM_BASE_URL || get("LLM_BASE_URL", defaults.llmBaseUrl),
     llmApiKey: fields.LLM_API_KEY || get("LLM_API_KEY", defaults.llmApiKey),
     verifyTls: boolField(fields.VERIFY_TLS, defaultVerifyTls),
@@ -226,9 +226,9 @@ export function loadDefaults(): Defaults {
       label: fields.LABEL || name.toUpperCase(),
       classifierBaseUrl: fields.CLASSIFIER_BASE_URL || "",
       classifierApiKey: fields.CLASSIFIER_API_KEY || "",
-      platformBaseUrl: fields.PLATFORM_BASE_URL || "",
-      platformCustomerKey: fields.PLATFORM_CUSTOMER_API_KEY || "",
-      platformBusinessKey: fields.PLATFORM_BUSINESS_API_KEY || "",
+      orchestratorBaseUrl: fields.ORCHESTRATOR_BASE_URL || "",
+      orchestratorCustomerKey: fields.ORCHESTRATOR_CUSTOMER_API_KEY || "",
+      orchestratorBusinessKey: fields.ORCHESTRATOR_BUSINESS_API_KEY || "",
       llmBaseUrl: fields.LLM_BASE_URL || "",
       llmApiKey: fields.LLM_API_KEY || "",
       verifyTls: boolField(fields.VERIFY_TLS, defaultVerifyTls),

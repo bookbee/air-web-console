@@ -15,7 +15,7 @@
 
 import { locationOf, type Location } from "./location";
 
-export type ServiceName = "air-classifier" | "air-platform" | "air-llm";
+export type ServiceName = "air-classifier-service" | "air-orchestrator-service" | "air-llm";
 
 export interface Connection {
   service: ServiceName;
@@ -24,7 +24,7 @@ export interface Connection {
   baseUrl: string;
   authenticated: boolean;
   timeoutSeconds: number;
-  /** air-platform's channel, when the service has one. It belongs to the key
+  /** air-orchestrator-service's channel, when the service has one. It belongs to the key
    * rather than the request, so it travels with the connection. */
   channel?: "customer" | "business";
 }

@@ -1,11 +1,11 @@
 /**
  * Shared handler behind the three catch-all proxy routes
- * (`/api/classifier/**`, `/api/platform/**`, `/api/llm/**`). Each route.ts
+ * (`/api/classifier/**`, `/api/orchestrator/**`, `/api/llm/**`). Each route.ts
  * is a two-line wrapper around this — every tab's request goes through the
  * same one transport, whichever service it targets.
  *
  * The connection is resolved entirely server-side: the client names a
- * *target* (and, for air-platform, a *channel*) — never a base URL or key
+ * *target* (and, for air-orchestrator-service, a *channel*) — never a base URL or key
  * — and `resolveService()` (`lib/config.ts`) turns that into the real
  * `{baseUrl, apiKey, verifyTls}` from this server's own `.env`. This is
  * the fix for the earlier design's SSRF hole (a client-supplied base URL
@@ -24,7 +24,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { assertGatewayAuthorized } from "@/lib/auth/gatewayAuth";
-import { loadDefaults, resolveService, type PlatformChannel, type ServiceKind } from "@/lib/config";
+import { loadDefaults, resolveService, type OrchestratorChannel, type ServiceKind } from "@/lib/config";
 import type { Exchange } from "@/lib/http/exchange";
 import { forwardRequest, forwardStreamRequest } from "@/lib/http/proxy";
 
@@ -66,7 +66,7 @@ export async function handleServiceProxy(
 
   const targetName = (request.headers.get("x-target-name") ?? "").trim().toLowerCase();
   const channelHeader = request.headers.get("x-target-channel");
-  const channel: PlatformChannel | undefined =
+  const channel: OrchestratorChannel | undefined =
     channelHeader === "business" ? "business" : channelHeader === "customer" ? "customer" : undefined;
   const timeoutSeconds = clampTimeout(request.headers.get("x-target-timeout-seconds"));
 

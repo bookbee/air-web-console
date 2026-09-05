@@ -56,7 +56,7 @@ export function BatchForm({ connection }: { connection: Connection }) {
   const errors: string[] = [];
   if (jsonError) errors.push(jsonError);
   if (items.length === 0) errors.unshift("Supply at least one item.");
-  if (!connection.baseUrl.trim()) errors.push("No air-classifier base URL set in the sidebar.");
+  if (!connection.baseUrl.trim()) errors.push("No air-classifier-service base URL set in the sidebar.");
 
   const body: Record<string, unknown> = { items };
   if (Object.keys(options).length > 0) body.options = options;

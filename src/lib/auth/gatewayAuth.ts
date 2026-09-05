@@ -10,7 +10,7 @@
  * key plays): it gates this gateway's front door and demonstrates the auth
  * step, but it never grants access to an upstream credential directly, and
  * it is not expected to resist someone who has the app's own bundle.
- * Upstream air-classifier/air-platform/air-llm keys never leave the server
+ * Upstream air-classifier-service/air-orchestrator-service/air-llm keys never leave the server
  * — see `resolveService()` in `config.ts`.
  *
  * The actual token parsing/comparison lives in `token.ts`, which has no

@@ -1,7 +1,7 @@
 import type { SseEvent } from "@/lib/http/exchange";
 
 /**
- * Reassembling air-platform's turn-lifecycle SSE events into the same shape
+ * Reassembling air-orchestrator-service's turn-lifecycle SSE events into the same shape
  * a JSON-body `TurnResult` already has — ported from `_fold_events`. Our
  * BFF's stream transport already collects every frame server-side (see
  * `forwardStreamRequest`), so this is the one place that needs to know the

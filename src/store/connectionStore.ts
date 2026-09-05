@@ -81,19 +81,20 @@ export const useConnectionStore = create<ConnectionState>()(
 
 export interface Connections {
   classifier: Connection;
-  platformCustomer: Connection;
-  platformBusiness: Connection;
+  orchestratorChat: Connection;
+  orchestratorQuery: Connection;
   llm: Connection;
 }
 
 type ConnectionFieldsSlice = Pick<ConnectionState, "targets" | "selectedTarget" | "timeoutSeconds">;
 
 /** The four Connection objects every tab and the target bar read from —
- * classifier, platform (customer), platform (business), llm. A pure
- * function of the store's primitive fields, not itself a Zustand selector
- * (see `useConnections` below for the memoized hook every component
- * should actually use — a raw `useConnectionStore(buildConnections)` would
- * allocate a new object every render and loop). */
+ * classifier, orchestrator (chat route/customer channel), orchestrator
+ * (query route/business channel), llm. A pure function of the store's
+ * primitive fields, not itself a Zustand selector (see `useConnections`
+ * below for the memoized hook every component should actually use — a raw
+ * `useConnectionStore(buildConnections)` would allocate a new object every
+ * render and loop). */
 export function buildConnections(state: ConnectionFieldsSlice): Connections {
   const target = state.targets[state.selectedTarget];
   const targetLabel = target?.label ?? state.selectedTarget;
@@ -105,22 +106,22 @@ export function buildConnections(state: ConnectionFieldsSlice): Connections {
   return {
     classifier: {
       ...base,
-      service: "air-classifier",
+      service: "air-classifier-service",
       baseUrl: target?.classifierBaseUrl ?? "",
       authenticated: target?.classifierKeyed ?? false,
     },
-    platformCustomer: {
+    orchestratorChat: {
       ...base,
-      service: "air-platform",
-      baseUrl: target?.platformBaseUrl ?? "",
-      authenticated: target?.platformCustomerKeyed ?? false,
+      service: "air-orchestrator-service",
+      baseUrl: target?.orchestratorBaseUrl ?? "",
+      authenticated: target?.orchestratorCustomerKeyed ?? false,
       channel: "customer",
     },
-    platformBusiness: {
+    orchestratorQuery: {
       ...base,
-      service: "air-platform",
-      baseUrl: target?.platformBaseUrl ?? "",
-      authenticated: target?.platformBusinessKeyed ?? false,
+      service: "air-orchestrator-service",
+      baseUrl: target?.orchestratorBaseUrl ?? "",
+      authenticated: target?.orchestratorBusinessKeyed ?? false,
       channel: "business",
     },
     llm: {

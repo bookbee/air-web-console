@@ -3,7 +3,7 @@
  * instead of `fetch` directly — the one place that knows the route prefix
  * per service and the request-header convention the proxy reads.
  *
- * The browser names a *target* and, for air-platform, a *channel* — never
+ * The browser names a *target* and, for air-orchestrator-service, a *channel* — never
  * a base URL or API key. `NEXT_PUBLIC_AIR_WEB_GATEWAY_TOKEN` is baked into
  * the bundle at build time and sent as a bearer token on every call: it
  * authenticates this web app to its own gateway (this BFF), the same way a
@@ -16,15 +16,15 @@ import type { Connection } from "@/lib/connection";
 import type { Exchange } from "@/lib/http/exchange";
 
 const ROUTE_PREFIX: Record<Connection["service"], string> = {
-  "air-classifier": "/api/classifier",
-  "air-platform": "/api/platform",
+  "air-classifier-service": "/api/classifier",
+  "air-orchestrator-service": "/api/orchestrator",
   "air-llm": "/api/llm",
 };
 
 export interface SendOptions {
   method?: string;
   body?: unknown;
-  /** Request the SSE transport (air-platform's turn stream). */
+  /** Request the SSE transport (air-orchestrator-service's turn stream). */
   stream?: boolean;
 }
 

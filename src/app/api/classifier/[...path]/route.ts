@@ -8,7 +8,7 @@ type Params = { params: Promise<{ path: string[] }> };
 
 async function handle(request: NextRequest, { params }: Params) {
   const { path } = await params;
-  return handleServiceProxy(request, path, "air-classifier");
+  return handleServiceProxy(request, path, "air-classifier-service");
 }
 
 export {

@@ -40,15 +40,14 @@ function resolvePayload(exchange: Exchange): Record<string, unknown> | null {
     : null;
 }
 
-/** The air-platform tab — ported from `tabs/platform.py`. Both routes run
- * one pipeline behind two entry points that differ only by profile. The
- * channel comes from the API key, not from a header or a route param, so
- * the console holds one key per channel and sends the one belonging to the
- * route you picked. */
-export function PlatformTab({ customer, business }: { customer: Connection; business: Connection }) {
+/** The air-orchestrator-service tab. Both routes run one pipeline behind
+ * two entry points that differ only by profile. The channel comes from the
+ * API key, not from a header or a route param, so the console holds one
+ * key per channel and sends the one belonging to the route you picked. */
+export function OrchestratorTab({ chat, query }: { chat: Connection; query: Connection }) {
   const [routeKey, setRouteKey] = useState<"chat" | "query">("chat");
   const route = ROUTES.find((r) => r.key === routeKey)!;
-  const connection = route.channel === "customer" ? customer : business;
+  const connection = route.key === "chat" ? chat : query;
 
   const [text, setText] = useState("");
   const [sessionId, setSessionId] = useState("");
@@ -67,7 +66,7 @@ export function PlatformTab({ customer, business }: { customer: Connection; busi
 
   const errors: string[] = [];
   if (!text.trim()) errors.push(`${route.field} is required.`);
-  if (!connection.baseUrl.trim()) errors.push("No air-platform base URL set in the sidebar.");
+  if (!connection.baseUrl.trim()) errors.push("No air-orchestrator-service base URL set in the sidebar.");
   if (schemaError) errors.push(schemaError);
 
   const body: Record<string, unknown> = { [route.field]: text };
@@ -225,7 +224,7 @@ export function PlatformTab({ customer, business }: { customer: Connection; busi
           </Typography>
           <ResponseView
             exchange={mutation.data as Exchange}
-            storageKey={`platform-${route.key}`}
+            storageKey={`orchestrator-${route.key}`}
             summary={(_payload, exchange) => (
               <TurnSummary
                 exchange={exchange}

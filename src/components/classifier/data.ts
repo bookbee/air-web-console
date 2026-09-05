@@ -21,11 +21,37 @@ export const EXAMPLES: readonly [string, string][] = [
 export const SOURCE_TYPES = ["feedback", "review"] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];
 
-/** Straight from air-classifier's own README, the `/v1/summary/refresh`
+/** Straight from air-classifier-service's own README, the `/v1/summary/refresh`
  * worked example — a quick way to see a real rollup+narrative without
- * hand-typing items. */
+ * hand-typing items. `existingSummary` is a sample *prior* summary for the
+ * same customer — the shape a real caller stores from one response and
+ * sends back as the next call's `existing_summary`. Loading it alongside
+ * fresh items demonstrates the actual round trip (old narrative + new
+ * items → refreshed narrative), and gives developers a concrete narrative
+ * to look at even when air-llm's summary model isn't reachable — in that
+ * case the response carries this text over unchanged instead of showing an
+ * empty string. */
 export const SUMMARY_EXAMPLE = {
   customerId: "cust_482",
+  existingSummary: {
+    narrative:
+      "An early-stage customer with one mixed review so far — pleased with delivery speed, mildly let down by an accuracy-of-listing issue.",
+    rollup: {
+      total_items: 1,
+      counts_by_source_type: { review: 1 },
+      sentiment_counts: { mixed: 1 },
+      urgency_counts: { low: 1 },
+      topic_counts: { delivery: 1 },
+      rating_count: 1,
+      rating_sum: 3.0,
+      average_rating: 3.0,
+      recent_ratings: [3.0],
+      recent_average_rating: 3.0,
+      first_seen_at: "2026-08-20T09:12:00.000Z",
+      last_seen_at: "2026-08-20T09:12:00.000Z",
+    },
+    version: 1,
+  },
   items: [
     {
       text: "The battery life is superb but the camera is a letdown.",
@@ -47,7 +73,7 @@ export interface TierProbe {
   rating?: number;
 }
 
-/** Two confident cases per tier, straight from air-classifier's own README
+/** Two confident cases per tier, straight from air-classifier-service's own README
  * — a pinned tier that cannot serve returns 503 rather than quietly
  * falling back, so a working response really did come from that rung. */
 export const TIER_PROBES: readonly TierProbe[] = [
