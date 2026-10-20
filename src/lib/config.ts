@@ -52,8 +52,8 @@ const LOCAL_TARGET_DEV_DEFAULTS = {
   classifierBaseUrl: "http://127.0.0.1:8082",
   classifierApiKey: "airc_local_dev_key",
   orchestratorBaseUrl: "http://127.0.0.1:8081",
-  orchestratorCustomerKey: "airp_local_customer_key",
-  orchestratorBusinessKey: "airp_local_business_key",
+  orchestratorCustomerKey: "airo_local_customer_key",
+  orchestratorBusinessKey: "airo_local_business_key",
   llmBaseUrl: "http://127.0.0.1:8083",
   llmApiKey: "air-client-dev",
 } as const;
