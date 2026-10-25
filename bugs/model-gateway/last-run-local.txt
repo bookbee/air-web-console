@@ -1,6 +1,6 @@
-air-model-gateway contract run · 2026-10-25T19:03:39.831Z
+air-model-gateway contract run · 2026-10-25T19:15:27.181Z
 console http://127.0.0.1:3000 · target local · gateway http://host.docker.internal:8083
-gateway reports environment local · health {"status":"ok","version":"0.1.0","revision":"4dd28b76537b-dirty"}
+gateway reports environment local · health {"status":"ok","version":"0.1.0","revision":"40ee62beb778"}
 
 PASS    happy path      health
 PASS    happy path      ready

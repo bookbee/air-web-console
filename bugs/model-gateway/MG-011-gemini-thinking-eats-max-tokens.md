@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | fixed, uncommitted |
+| **Status** | verified |
 | **Severity** | Medium |
 | **Service** | air-model-gateway @ `4dd28b7` (revision `4dd28b76537b`, clean) |
 | **Found** | 2026-10-26, live calls (demo preparation in the console) |
@@ -96,8 +96,7 @@ included, since it's billed) and price it as today.
 
 ## Resolution
 
-Fixed in air-model-gateway on top of `4dd28b7`, **not yet committed** (the owner
-commits and tags; add the commit here when it lands). Option 1, as suggested:
+Fixed in air-model-gateway `40ee62b` (on top of `4dd28b7`). Option 1, as suggested:
 
 - **Config.** `deploy/routing.yaml` has a new `model_settings` section keyed
   `provider:model`, so it applies wherever the model runs (any chain, an override, a
@@ -134,5 +133,10 @@ Each a full sentence. `model: "cloud"` at 300: Gemini, `stop`. Streamed at 120:
 (was 7–12 s with thinking). This console's `make gateway-check`: contract 42/42,
 `gap-gemini-thinking-cap` passing (reported as "now passing").
 
-_Verifier: after the commit lands, re-run on the tag, then move
-`gap-gemini-thinking-cap` out of known gaps._
+**Verifier, 2026-10-26** (run by the gateway session at the owner's request) against
+`40ee62b` (revision `40ee62beb778`, clean; one listener on `:8083`, no reload): the
+repro at `max_tokens` 120 and 300 and uncapped returns `stop` with 31, 29 and 35
+completion tokens ($0.000082, $0.000077, $0.000092). `make gateway-check`: contract
+42/42, `gap-gemini-thinking-cap` passing. Status set to `verified`. Still to do in this
+console (its own session): move `gap-gemini-thinking-cap` out of *known gaps* in
+`src/components/llm/data.ts`.
