@@ -117,10 +117,11 @@ describe("tally", () => {
   });
 
   it("names a known gap that now passes by its bug id, once", () => {
-    const gap = { ...SCENARIOS[0], group: "known gaps" as const, bug: "MG-999" };
-    const counts = tally([gap, gap, ...SCENARIOS].map((scenario) => ({ scenario, failure: null })));
+    const contract = SCENARIOS.filter((s) => s.group !== "known gaps");
+    const gap = { ...contract[0], group: "known gaps" as const, bug: "MG-999" };
+    const counts = tally([gap, gap, ...contract].map((scenario) => ({ scenario, failure: null })));
     expect(counts.gapsFixed).toEqual(["MG-999"]);
-    expect(counts.contractTotal).toBe(SCENARIOS.length);
+    expect(counts.contractTotal).toBe(contract.length);
   });
 
   it("gives every known gap a report under bugs/model-gateway/", () => {

@@ -706,7 +706,22 @@ export const SCENARIOS: readonly Scenario[] = [
 
   // ---- known gaps: one row per open bug with a live repro (bugs/README.md). It
   // asserts what the contract promises, so it fails until the gateway fix lands.
-  // None open right now.
+  {
+    id: "gap-gemini-thinking-cap",
+    group: "known gaps",
+    bug: "MG-011",
+    label: "Gemini finishes within max_tokens 300",
+    method: "POST",
+    path: "/v1/generate",
+    body: {
+      pin: "gemini:gemini-2.5-flash",
+      messages: [{ role: "user", content: "In one sentence, why might a customer's parcel arrive late?" }],
+      max_tokens: 300,
+      cache: false,
+    },
+    local: { status: 200, check: (b) => expect(b.finish_reason === "stop", `finish_reason ${String(b.finish_reason)}: thinking used up the cap`) },
+    note: "The integration guide says 300 is enough; Gemini's thinking spends it all and the answer is cut off. Needs a Gemini key; under a cent.",
+  },
 ];
 
 export function expectationFor(scenario: Scenario, environment: string | null): Expectation {

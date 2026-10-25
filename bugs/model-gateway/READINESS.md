@@ -7,11 +7,11 @@ covers its spec, internal gates and risks. This page adds the consumer's
 view (does the running gateway keep its contract?) and the release
 decision.
 
-## Current verdict (2026-10-26 00:20): ready for QA, not yet for handover
+## Current verdict (2026-10-26): ready for QA, not yet for handover
 
 The code is in good shape: every step that can run locally passes on the
-committed build `4dd28b7`, and all ten bugs are closed. What's left is the
-tag, the QA run and sign-offs:
+committed build `4dd28b7`, and MG-001 to MG-010 are closed. What's left is
+the tag, the QA run, two new reports and sign-offs:
 
 1. **Committed, not tagged.** `4dd28b7` holds every tracked change and
    reports a clean revision (`4dd28b76537b`). The only files outside git are
@@ -23,10 +23,17 @@ tag, the QA run and sign-offs:
 3. **Owner sign-off on numbers** (step 7): budgets and provider quotas are
    now set and required, but they're starting values. The owner confirms
    them against each provider account's limits.
-4. **Bugs** (step 6): closed. MG-001 to MG-010 are all `verified`; MG-006 to
+4. **Bugs** (step 6): MG-001 to MG-010 are all `verified`; MG-006 to
    MG-010 by their manual repros against `4dd28b7` on 2026-10-26, MG-009 on a
    second instance with an invalid Gemini key. Those runs were made by the
    gateway session at the owner's request; QA may repeat them on the tag.
+   New since then, found while preparing the console demo:
+   [MG-011](MG-011-gemini-thinking-eats-max-tokens.md) (Medium, fixed in the
+   gateway's uncommitted tree, passing live; verify on the tag:
+   Gemini answers cut off at the guide's recommended `max_tokens`) and
+   [MG-012](MG-012-failover-path-not-reported.md) (Low: `wont-fix` for this
+   release, planned in the gateway's `00-plan.md` §6).
+   The gate needs MG-011 `verified`, or `wont-fix` with a reason.
 
 Not a gateway blocker, but it blocks the platform as a whole:
 air-orchestrator-service still calls the removed `/v1/inference`, so its
@@ -77,7 +84,7 @@ verified, and none is open. A new open bug adds a known-gap row again.
 | 3 Runtime gates | ✅ gateway checks on `6357b7a992e6-dirty` (same `src/` as `4dd28b7`; re-run on the tag) | kind (prod policy): all pass. Integration (staging): 18/18 gateway checks; the orchestrator consumer check fails, since it still calls `/v1/inference` (consumer migration) |
 | 4 Contract, local | ✅ on `4dd28b76537b`, 2026-10-26 00:16: one listener, started after the last commit, no reload | [last-run-local.txt](last-run-local.txt): contract 42/42, no known gaps open; the header records the revision |
 | 5 Contract, QA | ⚠️ not run | The QA target in this console's `.env.local` is commented out (placeholder URL) |
-| 6 Bugs | ✅ none open; MG-001–010 all `verified` (MG-006–010 on `4dd28b7`) | [README.md](README.md) |
+| 6 Bugs | ⚠️ MG-011 (Medium) fixed, uncommitted, passing live; MG-012 (Low) `wont-fix`, planned; MG-001–010 all `verified` (MG-006–010 on `4dd28b7`) | [README.md](README.md) |
 | 7 Decisions | ⚠️ starting values set and now required (the gateway won't start outside local if a paid service has no budget); the owner confirms the numbers | `deploy/policy/policy.{staging,prod}.yaml` |
 | 8 Evidence | Pending steps 1–7 | |
 

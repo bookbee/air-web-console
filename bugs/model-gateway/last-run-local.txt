@@ -1,6 +1,6 @@
-air-model-gateway contract run · 2026-10-25T18:46:26.043Z
+air-model-gateway contract run · 2026-10-25T19:03:39.831Z
 console http://127.0.0.1:3000 · target local · gateway http://host.docker.internal:8083
-gateway reports environment local · health {"status":"ok","version":"0.1.0","revision":"4dd28b76537b"}
+gateway reports environment local · health {"status":"ok","version":"0.1.0","revision":"4dd28b76537b-dirty"}
 
 PASS    happy path      health
 PASS    happy path      ready
@@ -44,5 +44,6 @@ PASS    contract edges  405-problem                    MG-003
 PASS    rejections      pin-unknown-model              MG-005
 PASS    rejections      embed-too-many                 MG-005
 PASS    rejections      too-many-messages              MG-005
+FIXED?  known gaps      gap-gemini-thinking-cap        MG-011
 
-contract 42/42 passed · known gaps open 0
+contract 42/42 passed · known gaps open 0 · now passing (verify, then move out of known gaps): MG-011

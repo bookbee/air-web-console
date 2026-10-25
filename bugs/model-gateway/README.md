@@ -27,6 +27,8 @@ statuses and severities are in [../README.md](../README.md).
 | [MG-008](MG-008-minor-items.md) | Low | verified | Minor items (streamed refusal, OpenAI params, cache-write pricing, budget race, stale `.env`) | none (code reading) |
 | [MG-009](MG-009-invalid-provider-key-silent.md) | High | verified | An invalid provider key is silent: cloud traffic moves to a pricier provider, readiness stays green, a pin blames the caller | none (needs a bad key; manual repro) |
 | [MG-010](MG-010-no-build-identity.md) | Medium | verified | The gateway doesn't report which build it is, so a test run can't prove what it tested | none |
+| [MG-011](MG-011-gemini-thinking-eats-max-tokens.md) | Medium | fixed, uncommitted | Gemini's thinking uses up `max_tokens`: capped answers are cut off and uncached, uncapped ones cost several times more | `gap-gemini-thinking-cap` |
+| [MG-012](MG-012-failover-path-not-reported.md) | Low | wont-fix (planned: gateway `00-plan.md` §6) | A response doesn't say which models were tried before the one that answered | none (shape is the origin's choice) |
 
 ## Test setup
 
