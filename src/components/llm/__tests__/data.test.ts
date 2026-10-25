@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Exchange } from "@/lib/http/exchange";
 
-import { expectationFor, judge, pinSuggestions, rungFailures, SCENARIOS } from "../data";
+import { expectationFor, judge, pinSuggestions, rungFailures, SCENARIOS, tally } from "../data";
 
 describe("rungFailures", () => {
   it("splits a 502 detail into one line per rung", () => {
@@ -104,5 +104,25 @@ describe("pinSuggestions", () => {
     };
     expect(pinSuggestions(caps)).toEqual(["ollama:llama3.2:3b", "llama.cpp:gguf", "gemini:gemini-2.5-flash"]);
     expect(pinSuggestions(null)).toEqual([]);
+  });
+});
+
+describe("tally", () => {
+  it("keeps open known gaps out of the contract count", () => {
+    const results = SCENARIOS.map((scenario) => ({ scenario, failure: scenario.group === "known gaps" ? "open" : null }));
+    const counts = tally(results);
+    expect(counts.contractPassed).toBe(counts.contractTotal);
+    expect(counts.gapsOpen).toBe(SCENARIOS.filter((s) => s.group === "known gaps").length);
+    expect(counts.gapsFixed).toEqual([]);
+  });
+
+  it("names a known gap that now passes by its bug id", () => {
+    const counts = tally(SCENARIOS.map((scenario) => ({ scenario, failure: null })));
+    expect(counts.gapsFixed).toContain("MG-001");
+    expect(counts.gapsFixed).toContain("MG-005");
+  });
+
+  it("gives every known gap a report under bugs/model-gateway/", () => {
+    for (const s of SCENARIOS.filter((s) => s.group === "known gaps")) expect(s.bug).toMatch(/^MG-\d{3}$/);
   });
 });

@@ -44,10 +44,18 @@ export const FALLBACK_EMBED_MODELS = ["local-768-v1", "cloud-1536-v1"];
 export interface Capabilities {
   environment?: string;
   providers?: Record<string, boolean>;
-  generate?: Record<string, { allowed: boolean; chain: string[] }>;
+  /** `available` (gateway fix for MG-004): some provider behind the choice is
+   * configured. Absent on older builds, so read it through `isAvailable`. */
+  generate?: Record<string, { allowed: boolean; available?: boolean; chain: string[] }>;
   preferred_providers?: string[] | null;
   may_pin?: boolean;
-  embed?: Record<string, { allowed: boolean; provider: string; model: string; dimensions: number }>;
+  embed?: Record<string, { allowed: boolean; available?: boolean; provider: string; model: string; dimensions: number }>;
+}
+
+/** Whether the gateway can serve an embedding name at all: its own
+ * `available` when it reports one, else whether its one provider is configured. */
+export function isAvailable(capabilities: Capabilities, spec: { available?: boolean; provider: string }): boolean {
+  return spec.available ?? capabilities.providers?.[spec.provider] !== false;
 }
 
 /** Every `provider:model` behind any class, in chain order: the useful
@@ -105,6 +113,8 @@ export interface Scenario {
   shared?: Expectation;
   /** Shown beside the result: what the scenario is for, or what it needs. */
   note: string;
+  /** Known gaps only: the report under bugs/model-gateway/ this row tracks. */
+  bug?: string;
 }
 
 const isJson = (value: unknown): boolean => {
@@ -576,6 +586,7 @@ export const SCENARIOS: readonly Scenario[] = [
   {
     id: "gap-gemini-nullable-schema",
     group: "known gaps",
+    bug: "MG-001",
     label: "Gemini structured output, nullable field",
     method: "POST",
     path: "/v1/generate",
@@ -593,19 +604,18 @@ export const SCENARIOS: readonly Scenario[] = [
   {
     id: "gap-unpriced-pin",
     group: "known gaps",
-    label: "Pinned paid model is priced",
+    bug: "MG-002",
+    label: "Pin to an unpriced paid model is refused",
     method: "POST",
     path: "/v1/generate",
     body: { pin: "anthropic:claude-sonnet-4-5", messages: HI, max_tokens: 5, cache: false },
-    local: {
-      status: 200,
-      check: (b) => expect(typeof b.cost_usd === "number" && b.cost_usd > 0, "billed by the provider, priced at 0 here: invisible to daily_budget_usd"),
-    },
-    note: "A pin to a model missing from pricing.yaml is free to the budget. Needs an Anthropic key.",
+    local: { status: 422, code: "invalid_model_choice" },
+    note: "A pin to a model missing from pricing.yaml would bill at the provider and count $0 against daily_budget_usd. No paid call when fixed.",
   },
   {
     id: "gap-404-problem",
     group: "known gaps",
+    bug: "MG-003",
     label: "404 is problem+json",
     method: "POST",
     path: "/v1/inference",
@@ -619,6 +629,7 @@ export const SCENARIOS: readonly Scenario[] = [
   {
     id: "gap-capabilities-usable",
     group: "known gaps",
+    bug: "MG-004",
     label: "Capabilities offers only usable choices",
     method: "GET",
     path: "/v1/capabilities",
@@ -626,13 +637,67 @@ export const SCENARIOS: readonly Scenario[] = [
       status: 200,
       check: (b) => {
         const caps = b as Capabilities;
-        const dead = Object.entries(caps.embed ?? {})
-          .filter(([, spec]) => spec.allowed && caps.providers?.[spec.provider] === false)
+        // Fixed when every embed name whose provider is unconfigured says so itself.
+        const silent = Object.entries(caps.embed ?? {})
+          .filter(([, spec]) => caps.providers?.[spec.provider] === false && spec.available !== false)
           .map(([name, spec]) => `${name} (${spec.provider} unconfigured)`);
-        return expect(dead.length === 0, `allowed but can only 502: ${dead.join(", ")}`);
+        return expect(silent.length === 0, `no available:false on: ${silent.join(", ")}`);
       },
     },
-    note: "An allowed embedding name whose one provider isn't configured can never answer.",
+    note: "An allowed embedding name whose one provider isn't configured can never answer; capabilities must say so (available: false).",
+  },
+  {
+    id: "gap-405-problem",
+    group: "known gaps",
+    bug: "MG-003",
+    label: "405 is problem+json",
+    method: "GET",
+    path: "/v1/generate",
+    local: {
+      status: 405,
+      check: (b) => all(expect(b.code === "method_not_allowed", "no method_not_allowed code"), expect(typeof b.request_id === "string", "no request_id in body")),
+    },
+    note: "A wrong method is an error like any other.",
+  },
+  {
+    id: "gap-pin-unknown-model",
+    group: "known gaps",
+    bug: "MG-005",
+    label: "Pin to a model the provider lacks is the caller's 422",
+    method: "POST",
+    path: "/v1/generate",
+    body: { pin: "ollama:no-such-model", messages: HI, max_tokens: 5 },
+    local: {
+      status: 422,
+      code: "invalid_model_choice",
+      // MG-006: the provider's own reason reaches the detail.
+      check: (b) => expect(String(b.detail ?? "").includes("not found"), "Ollama's reason (model not found) missing from detail"),
+    },
+    note: "Retrying can't help, so it must not be a 502. Also checks MG-006 (the provider's reason is kept).",
+  },
+  {
+    id: "gap-embed-too-many",
+    group: "known gaps",
+    bug: "MG-005",
+    label: "Oversized embed batch is refused up front",
+    method: "POST",
+    path: "/v1/embed",
+    body: { model: "local-768-v1", input: Array.from({ length: 2049 }, (_, i) => `text ${i}`) },
+    local: { status: 422, code: "validation_error" },
+    shared: { status: 422, code: "validation_error" },
+    note: "More than 2,048 texts: an immediate 422, not a provider tied up before a 502.",
+  },
+  {
+    id: "gap-too-many-messages",
+    group: "known gaps",
+    bug: "MG-005",
+    label: "Oversized conversation is refused up front",
+    method: "POST",
+    path: "/v1/generate",
+    body: { messages: Array.from({ length: 501 }, () => ({ role: "user", content: "hi" })) },
+    local: { status: 422, code: "validation_error" },
+    shared: { status: 422, code: "validation_error" },
+    note: "More than 500 messages: 422 before any provider is called.",
   },
 ];
 
@@ -664,4 +729,17 @@ export function rungFailures(detail: unknown): string[] {
     .split(/; (?=(?:ollama|anthropic|openai|gemini|llama\.cpp):)/)
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+/** Run-all tally, split so an open known gap never reads as a regression:
+ * contract rows must all pass; a known gap that passes means its fix landed. */
+export function tally(results: readonly { scenario: Scenario; failure: string | null }[]) {
+  const contract = results.filter((r) => r.scenario.group !== "known gaps");
+  const gaps = results.filter((r) => r.scenario.group === "known gaps");
+  return {
+    contractPassed: contract.filter((r) => r.failure === null).length,
+    contractTotal: contract.length,
+    gapsOpen: gaps.filter((r) => r.failure !== null).length,
+    gapsFixed: [...new Set(gaps.filter((r) => r.failure === null).map((r) => r.scenario.bug ?? r.scenario.id))],
+  };
 }

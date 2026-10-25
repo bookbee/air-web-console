@@ -6,13 +6,13 @@ import Typography from "@mui/material/Typography";
 
 import { DataTable } from "@/components/shared/DataTable";
 
-import type { Capabilities } from "./data";
+import { isAvailable, type Capabilities } from "./data";
 
 /** What each model choice means for this console, from the gateway's own
  * `GET /v1/capabilities`: the chain behind every class (in the order tried,
  * per-service overrides applied) and every published embedding name. Rows
- * whose only provider isn't configured are flagged, because capabilities
- * still lists them as allowed. */
+ * the gateway can't serve here (`available: false`) are flagged: `allowed`
+ * is the policy's answer alone. */
 export function ModelChoices({ capabilities }: { capabilities: Capabilities }) {
   const configured = capabilities.providers ?? {};
   const unconfigured = (rung: string) => configured[rung.split(":")[0]] === false;
@@ -20,6 +20,7 @@ export function ModelChoices({ capabilities }: { capabilities: Capabilities }) {
   const classRows = Object.entries(capabilities.generate ?? {}).map(([name, entry]) => ({
     class: name,
     allowed: entry.allowed,
+    available: entry.available ?? "—",
     chain: entry.chain.map((rung) => (unconfigured(rung) ? `${rung} (not configured)` : rung)).join(" → "),
   }));
   const embedRows = Object.entries(capabilities.embed ?? {}).map(([name, spec]) => ({
@@ -27,9 +28,9 @@ export function ModelChoices({ capabilities }: { capabilities: Capabilities }) {
     allowed: spec.allowed,
     model: `${spec.provider}:${spec.model}`,
     dimensions: spec.dimensions,
-    usable: configured[spec.provider] !== false,
+    available: isAvailable(capabilities, spec),
   }));
-  const deadEmbeds = embedRows.filter((row) => row.allowed && !row.usable).map((row) => row.name);
+  const deadEmbeds = embedRows.filter((row) => row.allowed && !row.available).map((row) => row.name);
 
   return (
     <Box>
@@ -43,8 +44,8 @@ export function ModelChoices({ capabilities }: { capabilities: Capabilities }) {
       </Box>
       {deadEmbeds.length > 0 && (
         <Alert severity="warning" sx={{ mt: 1 }}>
-          Listed as allowed, but its one provider isn&apos;t configured on this gateway, so every call is a
-          502: {deadEmbeds.join(", ")}.
+          Allowed, but its one provider isn&apos;t configured on this gateway, so every call fails:{" "}
+          {deadEmbeds.join(", ")}.
         </Alert>
       )}
     </Box>

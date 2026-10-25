@@ -56,7 +56,16 @@ make lint / make typecheck / make test / make check   # check = everything CI ru
 make build && make start                               # native production build
 make logs                                              # tail the Docker container
 make down                                              # stop the Docker container
+make gateway-check [GATEWAY_TARGET=qa]                 # every Model Gateway scenario, headless, against a live gateway
 ```
+
+`make gateway-check` needs the console serving and a running gateway. It
+writes `bugs/model-gateway/last-run-<target>.txt` and fails on any contract
+scenario failure. It's kept out of `make check` and CI because it calls live
+services, including a few small paid cloud calls. Bugs found in the AIR
+services are written up under [`bugs/`](bugs/README.md), and the gateway's
+release/handover gate is
+[`bugs/model-gateway/READINESS.md`](bugs/model-gateway/READINESS.md).
 
 `make help` lists every target, including `image` (build the Docker image
 without starting it) and `clean` (remove `node_modules`/`.next`).
@@ -149,6 +158,8 @@ on the way.
 
 ```text
 Dockerfile, docker-compose.yml   local-dev-only container; see "In a container"
+bugs/                            bug reports for the AIR services, one file each (see bugs/README.md)
+scripts/                         live suites (*.live.test.ts), run by make gateway-check
 src/
   app/
     api/

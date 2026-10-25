@@ -6,7 +6,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useState } from "react";
 
-import { FALLBACK_EMBED_MODELS, type Capabilities } from "./data";
+import { FALLBACK_EMBED_MODELS, isAvailable, type Capabilities } from "./data";
 
 /** `POST /v1/embed`'s body: `model` is required (it is the index's
  * identity, so there is no default to fall back to) and `input` is one
@@ -50,7 +50,7 @@ export function EmbeddingsFields({
       />
       <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
         {spec
-          ? `${spec.provider}:${spec.model}, ${spec.dimensions} dimensions${spec.allowed ? "" : " — not granted to this console"}${capabilities?.providers?.[spec.provider] === false ? ` — ${spec.provider} not configured here` : ""}. One model, never a fallback.`
+          ? `${spec.provider}:${spec.model}, ${spec.dimensions} dimensions${spec.allowed ? "" : " — not granted to this console"}${capabilities && !isAvailable(capabilities, spec) ? ` — ${spec.provider} not configured here` : ""}. One model, never a fallback.`
           : "Not a published name here (expect 422), or capabilities not loaded yet."}
       </Typography>
       <TextField

@@ -18,7 +18,7 @@ import type { Exchange } from "@/lib/http/exchange";
 import { useHistoryStore } from "@/store/historyStore";
 
 import { CallSummary } from "./CallSummary";
-import { expectationFor, judge, SCENARIOS, type Expectation, type Scenario } from "./data";
+import { expectationFor, judge, SCENARIOS, tally, type Expectation, type Scenario } from "./data";
 
 interface Outcome {
   exchange: Exchange;
@@ -79,8 +79,10 @@ export function ScenarioPanel({ connection }: { connection: Connection }) {
     }
   };
 
-  const results = Object.values(outcomes);
-  const passed = results.filter((o) => o.failure === null).length;
+  const counts = tally(
+    SCENARIOS.filter((scenario) => outcomes[scenario.id]).map((scenario) => ({ scenario, failure: outcomes[scenario.id].failure })),
+  );
+  const ran = counts.contractTotal + counts.gapsOpen + counts.gapsFixed.length;
   const selectedOutcome = selected ? outcomes[selected] : undefined;
 
   return (
@@ -93,16 +95,26 @@ export function ScenarioPanel({ connection }: { connection: Connection }) {
         what the gateway&apos;s contract promises. Expectations follow the gateway&apos;s own reported
         environment{environment ? <> (<b>{environment}</b>)</> : null}: outside <code>local</code> this
         console&apos;s key is granted <code>generate</code>, <code>admin_read</code> and <code>pin</code>, not{" "}
-        <code>embed</code>. Rows marked <b>known gaps</b> check what the contract promises and fail until
-        the matching gateway fix lands. Rows that name a cloud provider make small paid calls.
+        <code>embed</code>. Rows marked <b>known gaps</b> check what the contract promises and fail (amber) until
+        the matching gateway fix lands; each names its report under <code>bugs/model-gateway/</code>. Rows that name a cloud provider make small paid calls.
       </Typography>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
         <Button variant="contained" size="small" disabled={disabled} onClick={() => run(SCENARIOS)}>
           {running ? "Running…" : "Run all"}
         </Button>
-        {results.length > 0 && (
-          <Typography variant="body2" color={passed === results.length ? "success.main" : "error.main"}>
-            {passed} / {results.length} passed
+        {ran > 0 && (
+          <Typography variant="body2" color={counts.contractPassed === counts.contractTotal ? "success.main" : "error.main"}>
+            contract {counts.contractPassed} / {counts.contractTotal} passed
+          </Typography>
+        )}
+        {counts.gapsOpen > 0 && (
+          <Typography variant="body2" color="warning.main">
+            · {counts.gapsOpen} known gap{counts.gapsOpen === 1 ? "" : "s"} still open (expected)
+          </Typography>
+        )}
+        {counts.gapsFixed.length > 0 && (
+          <Typography variant="body2" color="info.main">
+            · now passing, verify and move out of known gaps: {counts.gapsFixed.join(", ")}
           </Typography>
         )}
       </Box>
@@ -130,7 +142,10 @@ export function ScenarioPanel({ connection }: { connection: Connection }) {
               >
                 <TableCell>
                   <Typography variant="body2">{scenario.label}</Typography>
-                  <Typography variant="caption" color="text.secondary">{scenario.group}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {scenario.group}
+                    {scenario.bug ? ` · ${scenario.bug}` : ""}
+                  </Typography>
                 </TableCell>
                 <TableCell sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}>
                   {expectedLabel(expectationFor(scenario, environment))}
@@ -141,8 +156,8 @@ export function ScenarioPanel({ connection }: { connection: Connection }) {
                   ) : outcome ? (
                     <Chip
                       size="small"
-                      color={outcome.failure === null ? "success" : "error"}
-                      label={outcome.failure === null ? "pass" : outcome.failure}
+                      color={outcome.failure === null ? (scenario.bug ? "info" : "success") : scenario.bug ? "warning" : "error"}
+                      label={outcome.failure === null ? (scenario.bug ? "pass: fix landed?" : "pass") : scenario.bug ? `open: ${outcome.failure}` : outcome.failure}
                       sx={{ maxWidth: 260 }}
                     />
                   ) : (

@@ -1,0 +1,48 @@
+air-model-gateway contract run · 2026-10-25T04:58:27.406Z
+console http://127.0.0.1:3000 · target local · gateway http://127.0.0.1:8083
+gateway reports environment local · health {"status":"ok","version":"0.1.0"}
+
+PASS    happy path      health
+PASS    happy path      ready
+PASS    happy path      request-id
+PASS    happy path      capabilities
+PASS    happy path      policy
+PASS    happy path      generate-default
+PASS    happy path      generate-local
+PASS    happy path      generate-cloud
+PASS    happy path      cloud-prefer-anthropic
+PASS    happy path      pin-local
+PASS    happy path      cache-hit
+PASS    happy path      cache-off
+PASS    happy path      structured-local
+PASS    happy path      embed-local
+PASS    streaming       stream-local
+PASS    streaming       stream-cache-hit
+PASS    streaming       stream-error-before-start
+PASS    contract edges  truncated
+PASS    contract edges  anthropic-temperature
+PASS    rejections      unknown-field
+PASS    rejections      legacy-task
+PASS    rejections      legacy-alias
+PASS    rejections      local-anthropic
+PASS    rejections      pin-with-model
+PASS    rejections      malformed-pin
+PASS    rejections      max-tokens-zero
+PASS    rejections      temperature-range
+PASS    rejections      bad-role
+PASS    rejections      message-name
+PASS    rejections      no-messages
+PASS    rejections      unpublished-embed
+PASS    rejections      legacy-embed-alias
+PASS    rejections      embed-no-input
+PASS    rejections      inference-removed
+FIXED?  known gaps      gap-gemini-nullable-schema     MG-001
+FIXED?  known gaps      gap-unpriced-pin               MG-002
+FIXED?  known gaps      gap-404-problem                MG-003
+FIXED?  known gaps      gap-capabilities-usable        MG-004
+FIXED?  known gaps      gap-405-problem                MG-003
+FIXED?  known gaps      gap-pin-unknown-model          MG-005
+FIXED?  known gaps      gap-embed-too-many             MG-005
+FIXED?  known gaps      gap-too-many-messages          MG-005
+
+contract 34/34 passed · known gaps open 0 · now passing (verify, then move out of known gaps): MG-001, MG-002, MG-003, MG-004, MG-005

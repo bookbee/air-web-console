@@ -210,6 +210,20 @@ build on every push and PR.
 
 ## Working in this repo
 
+- Bugs this console finds in the AIR services are written up under
+  `bugs/<service>/` (one `<PREFIX>-<NNN>-<slug>.md` per bug, plus that
+  service's `README.md` index) for the owning team to fix and verify.
+  `bugs/README.md` is the process (IDs, statuses, severities), and
+  `bugs/TEMPLATE.md` is the starting point. Each open bug with a live repro
+  has a matching *known gaps* scenario (its `bug` field names the report);
+  move both forward together. `bugs/model-gateway/READINESS.md` is the
+  release/handover gate. `make gateway-check` runs every gateway scenario
+  headless through the BFF (console must be serving) and writes
+  `bugs/model-gateway/last-run-<target>.txt`; it lives in
+  `scripts/*.live.test.ts` under `vitest.live.config.mts`, which `make check`
+  and CI deliberately exclude because it needs live services and makes small
+  paid calls.
+
 - Pure/testable logic lives deliberately separated from anything that
   imports `"server-only"` — `src/lib/location.ts`, `src/lib/format.ts`,
   `src/lib/http/exchange.ts`, `src/lib/validators.ts`, and

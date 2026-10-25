@@ -55,8 +55,8 @@ function ProblemHint({ exchange }: { exchange: Exchange }) {
             </li>
           ))}
         </Box>
-        A rung that failed on a 4xx (unknown model, missing key, rejected request) fails the same way on
-        retry, even though the status is 502.
+        A 502 is the one to retry. If a rung failed on the gateway&apos;s own key or a model it lacks,
+        that&apos;s the gateway owner&apos;s configuration, and retrying won&apos;t clear it.
       </Alert>
     );
   }
@@ -66,6 +66,15 @@ function ProblemHint({ exchange }: { exchange: Exchange }) {
         Expected outside <code>local</code>: the gateway&apos;s staging and prod policies grant
         air-web-console <code>generate</code> and <code>admin_read</code> only. Embed works here only
         against a <code>local</code> gateway.
+      </Alert>
+    );
+  }
+  if (body.code === "provider_rejected") {
+    return (
+      <Alert severity="info" sx={{ mb: 1.5 }}>
+        Every provider in the chain refused this request as invalid (too long, a parameter it won&apos;t
+        take). Don&apos;t retry it unchanged. If the reason is an API key, it&apos;s the gateway&apos;s
+        misconfiguration, not your request (MG-009).
       </Alert>
     );
   }

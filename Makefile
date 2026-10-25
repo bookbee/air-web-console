@@ -6,7 +6,7 @@ IMAGE   ?= air-web-console
 TAG     ?= local
 
 .DEFAULT_GOAL := help
-.PHONY: help install env dev build start lint typecheck test check image up down logs clean
+.PHONY: help install env dev build start lint typecheck test check gateway-check image up down logs clean
 
 help: ## Show this help
 	@echo "AIR Web Console (air-web-console) — make <target>"
@@ -42,6 +42,12 @@ test: ## Run the test suite
 	npm run test
 
 check: lint typecheck test ## Everything CI runs
+
+GATEWAY_TARGET ?= local
+gateway-check: ## Run every Model Gateway contract scenario against a live gateway (console must be serving; GATEWAY_TARGET=local)
+	@set -a; . ./.env.local; set +a; \
+		CONSOLE_URL=http://$(HOST):$(PORT) GATEWAY_TARGET=$(GATEWAY_TARGET) \
+		npx vitest run --config vitest.live.config.mts
 
 image: env ## Build the runtime Docker image
 	$(COMPOSE) build
