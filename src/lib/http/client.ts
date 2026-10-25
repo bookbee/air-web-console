@@ -13,7 +13,8 @@
 "use client";
 
 import type { Connection } from "@/lib/connection";
-import type { Exchange } from "@/lib/http/exchange";
+import type { Exchange, SseEvent } from "@/lib/http/exchange";
+import { LIVE_CONTENT_TYPE, LIVE_STREAM_HEADER, LIVE_STREAM_VALUE, readLiveBody } from "@/lib/http/live";
 
 const ROUTE_PREFIX: Record<Connection["service"], string> = {
   "air-classifier-service": "/api/classifier",
@@ -26,6 +27,11 @@ export interface SendOptions {
   body?: unknown;
   /** Request the SSE transport (air-orchestrator-service's turn stream). */
   stream?: boolean;
+  /** With `stream`: have the BFF pass each frame on as it arrives (see
+   * `live.ts`). The promise still resolves to the same finished Exchange. */
+  live?: boolean;
+  /** With `live`: called with each frame as it arrives. */
+  onFrame?: (frame: SseEvent) => void;
 }
 
 /** Send one request through this service's BFF proxy route. Always
@@ -47,6 +53,8 @@ export async function sendViaProxy(
     "X-Target-Timeout-Seconds": String(connection.timeoutSeconds),
   };
   if (connection.channel) headers["X-Target-Channel"] = connection.channel;
+  const live = Boolean(options.stream && options.live);
+  if (live) headers[LIVE_STREAM_HEADER] = LIVE_STREAM_VALUE;
 
   const response = await fetch(`${prefix}${path}`, {
     method: options.method ?? "GET",
@@ -69,6 +77,27 @@ export async function sendViaProxy(
       elapsedMs: 0,
       error: null,
       isStream: false,
+      events: [],
+    };
+  }
+
+  // No base URL, for one, is answered as a plain Exchange even when live.
+  if (live && response.body && (response.headers.get("content-type") ?? "").includes(LIVE_CONTENT_TYPE)) {
+    const exchange = await readLiveBody(response.body, options.onFrame ?? (() => {}));
+    if (exchange) return exchange;
+    return {
+      method: (options.method ?? "GET").toUpperCase(),
+      url: `${prefix}${path}`,
+      requestHeaders: headers,
+      requestBody: options.body ?? null,
+      statusCode: null,
+      reason: "",
+      responseHeaders: {},
+      responseJson: null,
+      responseText: "",
+      elapsedMs: 0,
+      error: "The live stream from this console's server ended before the call finished.",
+      isStream: true,
       events: [],
     };
   }

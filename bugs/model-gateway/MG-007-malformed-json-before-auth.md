@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | fixed |
+| **Status** | verified |
 | **Severity** | Low |
 | **Service** | air-model-gateway @ `29fc4aa` |
 | **Found** | 2026-10-25, live call |
@@ -53,7 +53,7 @@ clearer detail.
 
 ## Resolution
 
-Fixed in air-model-gateway `develop` on top of `29fc4aa`, **not yet committed** (the owner commits; add the commit here when it lands). `make verify` passes (324 tests); the repro was re-run live against the fixed build on 2026-10-25.
+Fixed in air-model-gateway `6357b7a` (on top of `29fc4aa`). `make verify` passes (343 tests).
 
 - `api/deps.py::AuthenticatedRoute` (on every `/v1` router) checks `X-API-Key` before
   FastAPI reads the body, but only for routes that depend on `require_principal`.
@@ -64,3 +64,5 @@ Fixed in air-model-gateway `develop` on top of `29fc4aa`, **not yet committed** 
   detail.
 
 **Verifier, 2026-10-25 10:24:** `make gateway-check` against the uncommitted tree passes nothing automatically (the BFF always sends a key); the manual repro returned 401, and the console scenarios now match the chosen fix. Set `verified` after the commit lands and the run is repeated against it.
+
+**Verifier, 2026-10-26** (run by the gateway session at the owner's request) against `4dd28b7` (revision `4dd28b76537b`, clean; `src/` identical to `6357b7a`), one listener on `:8083`: the repro with no key returns 401; with a valid key, 422 `validation_error`, detail `body is not valid JSON (at character 14)`. Status set to `verified`.

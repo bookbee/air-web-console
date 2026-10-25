@@ -159,13 +159,13 @@ on the way.
 ```text
 Dockerfile, docker-compose.yml   local-dev-only container; see "In a container"
 bugs/                            bug reports for the AIR services, one file each (see bugs/README.md)
-scripts/                         live suites (*.live.test.ts), run by make gateway-check
+tests/                           test setup, and live suites (tests/live/*.live.test.ts) run by make gateway-check
 src/
   app/
     api/
       classifier/[...path]/route.ts     proxy to air-classifier-service
       orchestrator/[...path]/route.ts   proxy to air-orchestrator-service (JSON + SSE)
-      llm/[...path]/route.ts            proxy to air-model-gateway
+      llm/[...path]/route.ts            proxy to air-model-gateway (JSON, collected SSE, or live NDJSON)
       config/route.ts                 redacted target catalogue, shipped to the client
       health/route.ts                 ungated liveness probe (Docker HEALTHCHECK)
       _lib/serviceProxy.ts            the shared, gateway-token-gated handler behind all three
@@ -179,7 +179,7 @@ src/
     config.ts      server-only .env parsing + resolveService()/toPublicDefaults()
     auth/          gatewayAuth.ts (server-only) + token.ts (pure, unit-tested)
     connection.ts  the resolved destination shape every tab reads (no key)
-    http/          Exchange type, cURL rendering, the server-side proxy transport
+    http/          Exchange type, cURL rendering, the server-side proxy transport, the live-stream wire (live.ts)
     format.ts      dashboard value formatters + USD→INR display
   store/           Zustand: connection (target selection only), theme, call history
 ```
@@ -191,14 +191,55 @@ src/
   render, never a thrown error from the BFF. A 401 from the gateway itself
   (bad/missing bearer token) is the one exception, and renders through the
   same problem-detail UI a real upstream 401 would.
-- air-orchestrator-service's SSE turn stream is exercised for real (the `Accept:
-  text/event-stream` request, the `event:`/`data:` framing) but collected
-  server-side into one `Exchange` before reaching the browser, since the
-  response pane has no incremental-render plumbing that a live stream would
-  actually benefit from.
+- **Streaming.** Streamed calls are real SSE end to end on the upstream
+  side (the `Accept: text/event-stream` request, the `event:`/`data:`
+  framing). Between the console's server and your browser there are two
+  modes:
+  - **Live** (Model Gateway tab, `stream: true` with **Render live** ticked,
+    the default): the answer appears as the gateway generates it. The
+    server passes each frame on the moment it arrives, as NDJSON, then
+    sends the finished call, so history and cURL are the same as before.
+    Closing the tab or navigating away mid-answer disconnects the gateway
+    too, so it stops generating.
+  - **Collected** (Render live unticked, the Orchestrator tab's turn
+    stream, the contract scenarios and `make gateway-check`): the server
+    waits for the stream to close and returns it in one piece. Each frame
+    still carries when the server received it, so the summary shows time
+    to first token and flags a stream that something along the way
+    buffered.
+
+  For live rendering to reach the browser through a proxy, the proxy must
+  not buffer. The console sends `X-Accel-Buffering: no` and `Cache-Control:
+  no-cache, no-transform`. Check any other proxy or CDN in front of it.
 - The server-side timeout a client requests is clamped to `[1, 120]`
   seconds regardless of what's asked for — a request header influences
   behavior, but never past a server-owned bound.
+- **Demoing the Model Gateway tab.** The status line at the top names the
+  gateway's build, its environment and which providers are configured. The
+  **Try:** presets fill the form for one feature each, and the request body
+  preview shows exactly what will be sent. A run that tells the story:
+  1. **Local & private**: answered on our own servers, cost 0.
+  2. **Cloud**: a cloud model answers, with its cost. Send it again: a cache
+     hit in milliseconds, at no cost.
+  3. **Prefer Anthropic**: the preferred provider moves to the front of the
+     chain; the **Route** grid shows which model answered.
+  4. **Structured JSON**: the answer is JSON, and the summary checks it
+     parses.
+  5. **Streaming**: the answer renders as it's generated.
+  6. **Embed → Similar meanings**: the similarity grid puts the two
+     late-delivery complaints closest.
+  7. **Failover:** stop the Ollama server (quit the Ollama app, or stop
+     `ollama serve`), then send a new question with `model` left at its
+     default (`auto`). Ask something new, or untick the cache; a question
+     asked before comes back from the cache instead. The Route grid shows
+     the local model didn't answer and a cloud one did, and the caller still
+     got one answer. Start Ollama again afterwards.
+
+  Then, under **Contract scenarios**, use **Run all** to show every contract
+  check passing, and use **Show policy** to show per-service grants and
+  budgets. Cloud presets make real paid calls (a fraction of a cent each).
+  Outside `local`, presets this console isn't granted are greyed out, with
+  the reason shown on hover.
 - The Model Gateway tab's generate mode includes a **Conversation builder**: air-model-gateway is
   stateless per call (no `session_id`), so a genuine multi-turn exchange
   means resending the whole transcript every time — this mode builds that

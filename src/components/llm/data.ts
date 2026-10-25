@@ -42,6 +42,9 @@ export const FALLBACK_EMBED_MODELS = ["local-768-v1", "cloud-1536-v1"];
 
 /** The part of `GET /v1/capabilities` this tab reads. */
 export interface Capabilities {
+  version?: string;
+  /** The build (gateway fix for MG-010); absent on older builds. */
+  revision?: string;
   environment?: string;
   providers?: Record<string, boolean>;
   /** `available` (gateway fix for MG-004): some provider behind the choice is

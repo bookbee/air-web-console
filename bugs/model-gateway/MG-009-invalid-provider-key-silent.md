@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | fixed (in air-model-gateway `6357b7a` plus its uncommitted tree; verified live) |
+| **Status** | verified |
 | **Severity** | High |
 | **Service** | air-model-gateway @ `29fc4aa` plus its uncommitted working tree as of 2026-10-25 09:17 |
 | **Found** | 2026-10-25, live calls on a second instance with a deliberately invalid Gemini key |
@@ -131,4 +131,6 @@ retry, and readiness.
 - **`/metrics`:**
   `rung_failures_total{model="gemini-2.5-flash",provider="gemini",reason="auth"} 4`.
 
-Commit: pending (the gateway owner commits).
+Commit: `6357b7a`.
+
+**Verifier, 2026-10-26** (run by the gateway session at the owner's request) against `4dd28b7` (revision `4dd28b76537b`, clean; `src/` identical to `6357b7a`): the repro above on a second instance (`:8084`, invalid Gemini key, stopped afterwards). Pin: `502 provider_unavailable`, detail `gemini: credentials or account refused (the gateway's gemini key is invalid, …)`. `cloud` with `provider: gemini`, twice: `200` from `anthropic` / `claude-haiku-4-5`. `/v1/ready`: `"gemini": false`, status `ready`. `/metrics`: `rung_failures_total{model="gemini-2.5-flash",provider="gemini",reason="auth"} 3.0`. Status set to `verified`.

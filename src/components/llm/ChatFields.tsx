@@ -30,9 +30,16 @@ type Mode = "single" | "conversation" | "advanced";
  * is functional but not friendly, so this mode builds the same array by
  * appending messages in the UI instead.
  */
-export function ChatFields({ onChange }: { onChange: (messages: ChatMessage[], errors: string[]) => void }) {
+export function ChatFields({
+  initialText = "",
+  onChange,
+}: {
+  /** A demo preset's message, filled into Single message mode. */
+  initialText?: string;
+  onChange: (messages: ChatMessage[], errors: string[]) => void;
+}) {
   const [mode, setMode] = useState<Mode>("single");
-  const [singleText, setSingleText] = useState("");
+  const [singleText, setSingleText] = useState(initialText);
   const [conversation, setConversation] = useState<ChatMessage[]>([]);
   const [draftRole, setDraftRole] = useState("user");
   const [draftContent, setDraftContent] = useState("");

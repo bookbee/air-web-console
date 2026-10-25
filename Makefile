@@ -47,7 +47,7 @@ GATEWAY_TARGET ?= local
 gateway-check: ## Run every Model Gateway contract scenario against a live gateway (console must be serving; GATEWAY_TARGET=local)
 	@set -a; . ./.env.local; set +a; \
 		CONSOLE_URL=http://$(HOST):$(PORT) GATEWAY_TARGET=$(GATEWAY_TARGET) \
-		npx vitest run --config vitest.live.config.mts
+		npx vitest run --config tests/live/vitest.config.mts
 
 image: env ## Build the runtime Docker image
 	$(COMPOSE) build

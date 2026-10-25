@@ -7,26 +7,26 @@ covers its spec, internal gates and risks. This page adds the consumer's
 view (does the running gateway keep its contract?) and the release
 decision.
 
-## Current verdict (2026-10-25 12:15): ready for QA, not yet for handover
+## Current verdict (2026-10-26 00:20): ready for QA, not yet for handover
 
-The code is in good shape: every step that can run locally passes on
-`6357b7a`. What's left is freezing the build, the QA run and sign-offs:
+The code is in good shape: every step that can run locally passes on the
+committed build `4dd28b7`, and all ten bugs are closed. What's left is the
+tag, the QA run and sign-offs:
 
-1. **Not frozen yet.** The code is committed as `6357b7a`, but 12 files are
-   still uncommitted (docs, tests and `.env.example`, nothing under `src/`),
-   and there's no tag. That's why the build reports `-dirty`. Commit, tag,
-   and re-run steps 2–4 on the tag. The runs below should then repeat
-   unchanged.
+1. **Committed, not tagged.** `4dd28b7` holds every tracked change and
+   reports a clean revision (`4dd28b76537b`). The only files outside git are
+   two proposal documents (`docs/07-ai-firewall.md`, `docs/08-observability.md`)
+   that change no behaviour. Tag it (e.g. `v0.2.0-rc1`) and re-run steps 3–4
+   on the tag.
 2. **QA environment not run** (step 5): the QA target is commented out in
    this console's `.env.local`.
 3. **Owner sign-off on numbers** (step 7): budgets and provider quotas are
    now set and required, but they're starting values. The owner confirms
    them against each provider account's limits.
-4. **Bugs to close** (step 6): MG-001 to MG-005 are `verified`. MG-006 to
-   MG-008 are fixed in `6357b7a` with no console scenario; verify them by
-   their manual repros. The gateway session reports MG-009 and MG-010 fixed
-   and re-checked live. A verifier here should repeat the MG-009 bad-key
-   repro on the tag before marking them `verified`.
+4. **Bugs** (step 6): closed. MG-001 to MG-010 are all `verified`; MG-006 to
+   MG-010 by their manual repros against `4dd28b7` on 2026-10-26, MG-009 on a
+   second instance with an invalid Gemini key. Those runs were made by the
+   gateway session at the owner's request; QA may repeat them on the tag.
 
 Not a gateway blocker, but it blocks the platform as a whole:
 air-orchestrator-service still calls the removed `/v1/inference`, so its
@@ -72,12 +72,12 @@ verified, and none is open. A new open bug adds a known-gap row again.
 
 | Step | State | Evidence |
 |---|---|---|
-| 1 Freeze | ⚠️ committed as `6357b7a`, plus 3 uncommitted files; not tagged | `git status` in air-model-gateway |
-| 2 Static gates | ✅ on `6357b7a992e6-dirty` | `make verify`: 343 tests, 95.1% coverage, all gates passed |
-| 3 Runtime gates | ✅ gateway checks on `6357b7a992e6-dirty` | kind (prod policy): all pass. Integration (staging): 18/18 gateway checks; the orchestrator consumer check fails, since it still calls `/v1/inference` (consumer migration) |
-| 4 Contract, local | ✅ on `6357b7a992e6-dirty`, 2026-10-25 12:13: one listener, started 12:05 after the commit | [last-run-local.txt](last-run-local.txt): contract 42/42, no known gaps open; the header records the revision |
+| 1 Freeze | ⚠️ committed as `4dd28b7` (clean revision; two untracked proposal docs only); not tagged | `git status` in air-model-gateway |
+| 2 Static gates | ✅ on `4dd28b7`, 2026-10-26 | `make verify`: 343 tests, 95.14% coverage, all gates passed |
+| 3 Runtime gates | ✅ gateway checks on `6357b7a992e6-dirty` (same `src/` as `4dd28b7`; re-run on the tag) | kind (prod policy): all pass. Integration (staging): 18/18 gateway checks; the orchestrator consumer check fails, since it still calls `/v1/inference` (consumer migration) |
+| 4 Contract, local | ✅ on `4dd28b76537b`, 2026-10-26 00:16: one listener, started after the last commit, no reload | [last-run-local.txt](last-run-local.txt): contract 42/42, no known gaps open; the header records the revision |
 | 5 Contract, QA | ⚠️ not run | The QA target in this console's `.env.local` is commented out (placeholder URL) |
-| 6 Bugs | ⚠️ none open. MG-001–005 `verified`; MG-006–008 fixed in `6357b7a`; MG-009–010 fixed and re-checked live by the gateway session, commit pending | [README.md](README.md) |
+| 6 Bugs | ✅ none open; MG-001–010 all `verified` (MG-006–010 on `4dd28b7`) | [README.md](README.md) |
 | 7 Decisions | ⚠️ starting values set and now required (the gateway won't start outside local if a paid service has no budget); the owner confirms the numbers | `deploy/policy/policy.{staging,prod}.yaml` |
 | 8 Evidence | Pending steps 1–7 | |
 
@@ -115,7 +115,9 @@ failed rung. Every build reports its `revision` in health, capabilities and
 `build_info` (MG-010). Still open:
 - *(suggest)* SLOs (availability and p95 latency per route and class) with
   failure drills (provider key revoked, budget hit, Redis down) added to
-  the integration suite.
+  the integration suite. The gateway's `docs/08-observability.md` now
+  proposes SLOs, an alert catalogue, dashboards and tracing (not yet
+  confirmed or built).
 
 **Security.**
 - Per-service tokens, rotatable (several per service).
@@ -123,9 +125,8 @@ failed rung. Every build reports its `revision` in health, capabilities and
 - Auth now runs before the body is parsed (MG-007).
 - Bounded `X-Request-ID`; size caps (MG-005).
 - `pip-audit` clean; NetworkPolicy in place.
-- The console's leak of the upstream `X-API-Key` to the browser (listed as
-  open in `05-handover.md` §7) is fixed in console `48a19fe`, so the gateway
-  team can drop that row.
+- The console's leak of the upstream `X-API-Key` to the browser is fixed in
+  console `48a19fe`; the gateway's `05-handover.md` no longer lists it.
 
 *(suggest)* Provider error bodies now reach the caller (up to 500 chars,
 MG-006). Fine for internal callers, but check them once for echoed input

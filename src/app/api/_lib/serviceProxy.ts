@@ -20,13 +20,23 @@
  * reached, since unknown values fall back safely) — those are real
  * HTTP-level errors, not `Exchange` data, since they're about *this*
  * server's own front door rather than the upstream call.
+ *
+ * A stream asked for live (`X-Stream-Mode: live`, see `lib/http/live.ts`)
+ * answers NDJSON instead: each frame as it arrives, then that same Exchange.
  */
 import { NextResponse, type NextRequest } from "next/server";
 
 import { assertGatewayAuthorized } from "@/lib/auth/gatewayAuth";
 import { loadDefaults, resolveService, type OrchestratorChannel, type ServiceKind } from "@/lib/config";
 import { displayHeaders, type Exchange } from "@/lib/http/exchange";
-import { forwardRequest, forwardStreamRequest } from "@/lib/http/proxy";
+import {
+  encodeLiveLine,
+  LIVE_CONTENT_TYPE,
+  LIVE_STREAM_HEADER,
+  LIVE_STREAM_VALUE,
+  type LiveLine,
+} from "@/lib/http/live";
+import { forwardRequest, forwardStreamRequest, type ForwardOptions } from "@/lib/http/proxy";
 
 const MIN_TIMEOUT_SECONDS = 1;
 const MAX_TIMEOUT_SECONDS = 120;
@@ -56,11 +66,59 @@ function clampTimeout(raw: string | null): number {
   return Math.min(MAX_TIMEOUT_SECONDS, Math.max(MIN_TIMEOUT_SECONDS, parsed));
 }
 
+/** The upstream key was needed to make the call; it must not ride back to
+ * the browser inside the Exchange. Masked here, server-side, not left to the
+ * response pane's display helpers. */
+function masked(exchange: Exchange): Exchange {
+  return { ...exchange, requestHeaders: displayHeaders(exchange.requestHeaders) };
+}
+
+/** The live transport: frames go out as the upstream sends them. If the
+ * browser goes away, the upstream call is aborted, so the service stops
+ * generating instead of finishing an answer nobody reads. */
+function liveStream(request: NextRequest, options: ForwardOptions): Response {
+  const encoder = new TextEncoder();
+  const abort = new AbortController();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (line: LiveLine) => {
+        try {
+          controller.enqueue(encoder.encode(encodeLiveLine(line)));
+        } catch {
+          // The browser already closed the stream; the abort below handles it.
+        }
+      };
+      const exchange = await forwardStreamRequest({
+        ...options,
+        signal: AbortSignal.any([request.signal, abort.signal]),
+        onEvent: (frame) => send({ frame }),
+      });
+      send({ exchange: masked(exchange) });
+      try {
+        controller.close();
+      } catch {
+        // Already cancelled.
+      }
+    },
+    cancel() {
+      abort.abort();
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      "Content-Type": LIVE_CONTENT_TYPE,
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
 export async function handleServiceProxy(
   request: NextRequest,
   pathSegments: string[],
   service: ServiceKind,
-): Promise<NextResponse<Exchange> | NextResponse> {
+): Promise<NextResponse<Exchange> | NextResponse | Response> {
   const unauthorized = assertGatewayAuthorized(request);
   if (unauthorized) return unauthorized;
 
@@ -98,19 +156,10 @@ export async function handleServiceProxy(
   }
 
   const wantsStream = (request.headers.get("accept") ?? "").includes("text/event-stream");
+  const options: ForwardOptions = { method: request.method, url, apiKey, timeoutSeconds, verifyTls, body };
+  if (wantsStream && request.headers.get(LIVE_STREAM_HEADER) === LIVE_STREAM_VALUE) {
+    return liveStream(request, options);
+  }
   const transport = wantsStream ? forwardStreamRequest : forwardRequest;
-
-  const exchange = await transport({
-    method: request.method,
-    url,
-    apiKey,
-    timeoutSeconds,
-    verifyTls,
-    body,
-  });
-
-  // The upstream key was needed to make the call; it must not ride back to
-  // the browser inside the Exchange. Masked here, server-side, not left to
-  // the response pane's display helpers.
-  return NextResponse.json({ ...exchange, requestHeaders: displayHeaders(exchange.requestHeaders) });
+  return NextResponse.json(masked(await transport(options)));
 }

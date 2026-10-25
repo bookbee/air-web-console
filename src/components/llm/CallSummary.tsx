@@ -3,13 +3,18 @@
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 
+import Typography from "@mui/material/Typography";
+
 import { ChatBubble } from "@/components/shared/ChatBubble";
+import { DataTable } from "@/components/shared/DataTable";
 import { DashboardGrid, type Row } from "@/components/shared/DashboardGrid";
 import { JsonViewer } from "@/components/shared/JsonViewer";
 import { formatCost, num, text, yn, type Kind } from "@/lib/format";
 import type { Exchange } from "@/lib/http/exchange";
 import { useConnectionStore } from "@/store/connectionStore";
 
+import type { Capabilities } from "./data";
+import { chainOutcome, similarityMatrix, type RungState } from "./demo";
 import { responseBody, type StreamFacts } from "./stream";
 
 /** Whether `content` parses, when the request asked for structured output.
@@ -72,10 +77,69 @@ function StreamRows({ facts }: { facts: StreamFacts }) {
   );
 }
 
+const RUNG: Record<RungState, { label: string; kind: Kind }> = {
+  missed: { label: "didn't answer", kind: "warn" },
+  served: { label: "answered", kind: "ok" },
+  unused: { label: "not needed", kind: "muted" },
+};
+
+/** The chain behind the class, with the rung that answered marked: failover
+ * is visible as rungs before it that didn't answer. */
+function RouteRows({ capabilities, exchange, body }: { capabilities: Capabilities | null; exchange: Exchange; body: Record<string, unknown> }) {
+  const outcome = chainOutcome(capabilities, exchange.requestBody, body);
+  if (!outcome) return null;
+  const missed = outcome.filter((rung) => rung.state === "missed").length;
+  return (
+    <Box sx={{ mb: 1.5 }}>
+      <DashboardGrid
+        title={`Route · class ${String(body.model_class)}`}
+        rows={[outcome.map(({ rung, state }, index) => ({ label: `${index + 1} · ${RUNG[state].label}`, value: rung, kind: RUNG[state].kind }))]}
+      />
+      {missed > 0 && !body.cached && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: -1 }}>
+          Failover: {missed === 1 ? "the model" : `${missed} models`} ahead in the chain didn&apos;t answer (down, over
+          quota, circuit open, or the call failed), so the gateway moved on. The caller saw one answer.
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
+/** How alike each pair of embedded texts is (cosine similarity): the point
+ * of a vector, made readable. */
+function SimilarityTable({ input, vectors }: { input: string[]; vectors: number[][] }) {
+  const matrix = similarityMatrix(vectors);
+  const short = (value: string) => (value.length > 32 ? `${value.slice(0, 31)}…` : value);
+  let best: [number, number] | null = null;
+  matrix.forEach((row, i) =>
+    row.forEach((score, j) => {
+      if (j > i && (best === null || score > matrix[best[0]][best[1]])) best = [i, j];
+    }),
+  );
+  const rows = input.map((text, i) => ({
+    text: `${i + 1}. ${short(text)}`,
+    ...Object.fromEntries(matrix[i].map((score, j) => [String(j + 1), i === j ? "—" : score.toFixed(2)])),
+  }));
+  const pair = best as [number, number] | null;
+  return (
+    <Box sx={{ mb: 1.5 }}>
+      <Typography sx={{ fontSize: "0.74rem", fontWeight: 600, letterSpacing: "0.8px", textTransform: "uppercase", color: "text.secondary", mb: 0.5 }}>
+        Similarity (cosine, 1 = same meaning)
+      </Typography>
+      <DataTable rows={rows} />
+      {pair && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+          Closest pair: {pair[0] + 1} and {pair[1] + 1} ({matrix[pair[0]][pair[1]].toFixed(2)}).
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
 /** `/v1/generate` (JSON or a folded stream) and `/v1/embed` answers.
  * Needs the exchange, not just its JSON: a stream's body is its events,
  * and structured output is judged against the request that was sent. */
-export function CallSummary({ exchange }: { exchange: Exchange }) {
+export function CallSummary({ exchange, capabilities = null }: { exchange: Exchange; capabilities?: Capabilities | null }) {
   const rate = useConnectionStore((state) => state.usdToInrRate);
   const body = responseBody(exchange);
   if (Object.keys(body).length === 0 || typeof body.code === "string") return null;
@@ -121,6 +185,7 @@ export function CallSummary({ exchange }: { exchange: Exchange }) {
   return (
     <Box>
       <DashboardGrid title="Verdict" rows={verdictRows} />
+      {!isEmbed && <RouteRows capabilities={capabilities} exchange={exchange} body={body} />}
       {facts && <StreamRows facts={facts} />}
 
       {typeof content === "string" && content.trim() && <ChatBubble role="assistant">{content}</ChatBubble>}
@@ -158,6 +223,9 @@ export function CallSummary({ exchange }: { exchange: Exchange }) {
               ],
             ]}
           />
+          {Array.isArray(inputCount) && inputCount.length === embeddings.length && inputCount.length >= 2 && inputCount.length <= 8 && (
+            <SimilarityTable input={inputCount.map(String)} vectors={embeddings as number[][]} />
+          )}
           <JsonViewer value={embeddings} maxHeight={240} />
         </Box>
       )}

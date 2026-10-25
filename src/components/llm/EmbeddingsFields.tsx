@@ -13,13 +13,16 @@ import { FALLBACK_EMBED_MODELS, isAvailable, type Capabilities } from "./data";
  * text per line. */
 export function EmbeddingsFields({
   capabilities,
+  initial,
   onChange,
 }: {
   capabilities: Capabilities | null;
+  /** A demo preset's body, filled in. */
+  initial?: { model: string; input: readonly string[] };
   onChange: (body: { model: string; input: string[] }, errors: string[]) => void;
 }) {
-  const [model, setModel] = useState("local-768-v1");
-  const [raw, setRaw] = useState("");
+  const [model, setModel] = useState(initial?.model ?? "local-768-v1");
+  const [raw, setRaw] = useState(initial ? initial.input.join("\n") : "");
   const published = capabilities?.embed ? Object.keys(capabilities.embed) : FALLBACK_EMBED_MODELS;
   const spec = capabilities?.embed?.[model];
 

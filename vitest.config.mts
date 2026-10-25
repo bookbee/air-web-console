@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./vitest.setup.ts"],
+    setupFiles: ["./tests/setup.ts"],
     // Live suites need running services; `make gateway-check` runs them.
     exclude: [...configDefaults.exclude, "**/*.live.test.ts"],
   },

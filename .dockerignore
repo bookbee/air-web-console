@@ -16,6 +16,12 @@ coverage
 npm-debug.log*
 .DS_Store
 
+# Docs, bug reports and tests: not needed to build the app, and keeping them
+# out means a new bug report or test run doesn't force a full rebuild.
+*.md
+bugs
+tests
+
 # Playwright/dev scratch — never meant to ship in an image.
 .walkthrough*.mjs
 .debug*.mjs

@@ -26,30 +26,34 @@ import { CLASS_PROVIDERS, MODEL_CLASSES, pinSuggestions, PROVIDERS, type Capabil
  * this is where a tester sees the gateway reject them. */
 export function OptionsEditor({
   capabilities,
+  initial = {},
   onChange,
 }: {
   capabilities: Capabilities | null;
+  /** A demo preset's fields: each one present starts ticked, at its value. */
+  initial?: Record<string, unknown>;
   onChange: (fields: Record<string, unknown>) => void;
 }) {
-  const [modelOn, setModelOn] = useState(false);
-  const [model, setModel] = useState<ModelClass>("local");
-  const [providerOn, setProviderOn] = useState(false);
-  const [provider, setProvider] = useState<string>("ollama");
-  const [pinOn, setPinOn] = useState(false);
-  const [pin, setPin] = useState("");
-  const [maxTokensOn, setMaxTokensOn] = useState(false);
-  const [maxTokens, setMaxTokens] = useState(300);
-  const [tempOn, setTempOn] = useState(false);
-  const [temperature, setTemperature] = useState(0.7);
-  const [schemaOn, setSchemaOn] = useState(false);
-  const [schemaRaw, setSchemaRaw] = useState("");
-  const [schemaName, setSchemaName] = useState("");
-  const [cachePrefixOn, setCachePrefixOn] = useState(false);
-  const [cachePrefix, setCachePrefix] = useState(true);
-  const [cacheOn, setCacheOn] = useState(false);
-  const [cache, setCache] = useState(false);
-  const [streamOn, setStreamOn] = useState(false);
-  const [stream, setStream] = useState(true);
+  const has = (field: string) => field in initial;
+  const [modelOn, setModelOn] = useState(has("model"));
+  const [model, setModel] = useState<ModelClass>((initial.model as ModelClass) ?? "local");
+  const [providerOn, setProviderOn] = useState(has("provider"));
+  const [provider, setProvider] = useState<string>((initial.provider as string) ?? "ollama");
+  const [pinOn, setPinOn] = useState(has("pin"));
+  const [pin, setPin] = useState((initial.pin as string) ?? "");
+  const [maxTokensOn, setMaxTokensOn] = useState(has("max_tokens"));
+  const [maxTokens, setMaxTokens] = useState((initial.max_tokens as number) ?? 300);
+  const [tempOn, setTempOn] = useState(has("temperature"));
+  const [temperature, setTemperature] = useState((initial.temperature as number) ?? 0.7);
+  const [schemaOn, setSchemaOn] = useState(has("json_schema"));
+  const [schemaRaw, setSchemaRaw] = useState(has("json_schema") ? JSON.stringify(initial.json_schema, null, 2) : "");
+  const [schemaName, setSchemaName] = useState((initial.schema_name as string) ?? "");
+  const [cachePrefixOn, setCachePrefixOn] = useState(has("cache_prefix"));
+  const [cachePrefix, setCachePrefix] = useState((initial.cache_prefix as boolean) ?? true);
+  const [cacheOn, setCacheOn] = useState(has("cache"));
+  const [cache, setCache] = useState((initial.cache as boolean) ?? false);
+  const [streamOn, setStreamOn] = useState(has("stream"));
+  const [stream, setStream] = useState((initial.stream as boolean) ?? true);
 
   useEffect(() => {
     const fields: Record<string, unknown> = {};
@@ -77,7 +81,12 @@ export function OptionsEditor({
   const pins = pinSuggestions(capabilities);
 
   return (
-    <Accordion disableGutters elevation={0} sx={{ border: 1, borderColor: "divider", "&:before": { display: "none" } }}>
+    <Accordion
+      disableGutters
+      elevation={0}
+      defaultExpanded={Object.keys(initial).length > 0}
+      sx={{ border: 1, borderColor: "divider", "&:before": { display: "none" } }}
+    >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography variant="body2">Options — tick a row to send it, leave clear to use the gateway default</Typography>
       </AccordionSummary>

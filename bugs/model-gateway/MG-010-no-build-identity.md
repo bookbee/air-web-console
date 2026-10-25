@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | fixed (in air-model-gateway `6357b7a` plus its uncommitted tree; verified live) |
+| **Status** | verified |
 | **Severity** | Medium (assurance and operations, not runtime behaviour) |
 | **Service** | air-model-gateway @ `29fc4aa` |
 | **Found** | 2026-10-25, live call and code reading |
@@ -68,4 +68,6 @@ reads `health {"status":"ok","version":"0.1.0","revision":"6357b7a992e6-dirty"}`
 ([last-run-local.txt](last-run-local.txt)). The integration stack (`:9083`) and kind
 report the same revision.
 
-Commit: pending (the gateway owner commits).
+Commit: `6357b7a`.
+
+**Verifier, 2026-10-26** (run by the gateway session at the owner's request) against `4dd28b7` (revision `4dd28b76537b`, clean; `src/` identical to `6357b7a`): `/v1/health` returns `{"status":"ok","version":"0.1.0","revision":"4dd28b76537b"}` (no `-dirty`), the boot line `air-model-gateway.start` carries the same revision, and the `make gateway-check` header records it ([last-run-local.txt](last-run-local.txt)). Status set to `verified`.

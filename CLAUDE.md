@@ -142,25 +142,46 @@ response pane is built from; `DashboardGrid`
 response *summary* is built from — extend a summary by adding rows to a
 `DashboardGrid`, not by inventing a new layout.
 
-**SSE streams are collected, not piped live** (air-orchestrator-service's
-turn stream and air-model-gateway's `/v1/generate` with `stream: true`). When a caller
-asks for the stream transport, `forwardStreamRequest` performs the real SSE
-request (`Accept: text/event-stream`, `event:`/`data:` frame parsing) but
-waits for the stream to close and returns one `Exchange` with all frames in
-`events` — the response pane has no incremental-render plumbing that a live
-stream would actually benefit from, so collecting once and rendering once
-is simpler than building that plumbing for no payoff. Client-side,
-`src/components/orchestrator/events.ts`'s `foldEvents` reassembles those events
-into the same shape a non-streamed `TurnResult` already has, so
-`TurnSummary` renders either identically; `src/components/llm/stream.ts`'s
-`foldStream` does the same for the gateway (`start`/`delta`/`done`/`error`
-into a `GenerateOutput`). Two details keep the collected form honest: each
-frame carries `received_ms` (when the BFF read it), so time-to-first-token
-and proxy buffering stay visible without live rendering; and a response
-that isn't `text/event-stream` (a 4xx/5xx before the stream started) is
-parsed as JSON into `responseJson`, not as frames. Upstream keys never ride
-back in an `Exchange`: `serviceProxy.ts` masks `requestHeaders` server-side
-before returning it, so there is no client-side "reveal" for them.
+**SSE streams have two transports: collected and live.**
+The BFF always makes the real SSE request upstream (`Accept:
+text/event-stream`, `event:`/`data:` frame parsing in
+`src/lib/http/proxy.ts`'s `forwardStreamRequest`). What differs is how the
+browser gets it:
+
+- **Collected:** the BFF waits for the stream to close and returns one
+  `Exchange` with every frame in `events`. air-orchestrator-service's turn
+  stream, the Model Gateway contract scenarios and `make gateway-check` use
+  this, because judging a call needs the finished answer anyway.
+- **Live:** the Model Gateway tab's `stream: true` with **Render live**
+  ticked (the default). The client adds `X-Stream-Mode: live`, and
+  `serviceProxy.ts`'s `liveStream` answers `application/x-ndjson`: one
+  `{"frame": …}` line per SSE event the moment it is read, then one
+  `{"exchange": …}` line holding the same key-masked `Exchange` the collected
+  transport would have returned (`src/lib/http/live.ts` defines the wire and
+  `readLiveBody`). `sendViaProxy` hands each frame to `onFrame`, and
+  `LiveAnswer` renders the answer so far. It's NDJSON rather than re-emitted
+  SSE for two reasons: the last line has to carry the whole `Exchange`, and
+  response compression leaves `application/x-ndjson` alone where it can
+  buffer `text/event-stream`. The response also sends `Cache-Control:
+  no-transform` and `X-Accel-Buffering: no` so a proxy passes it straight
+  through. If the browser goes away, the BFF aborts the upstream call (the
+  request's `signal`, plus the stream's `cancel`), and the gateway stops
+  generating (`streams_total{outcome="client_disconnected"}`).
+
+Either way the trust boundary is unchanged: the upstream key never leaves
+the server, and the browser still only names a target. Client-side,
+`src/components/orchestrator/events.ts`'s `foldEvents` reassembles events
+into the same shape a non-streamed `TurnResult` has, so `TurnSummary`
+renders either identically; `src/components/llm/stream.ts`'s `foldStream`
+does the same for the gateway (`start`/`delta`/`done`/`error` into a
+`GenerateOutput`), and `LiveAnswer` re-runs it on every frame. Two details
+keep a collected stream honest: each frame carries `received_ms` (when the
+BFF read it), so time-to-first-token and proxy buffering stay visible
+without live rendering; and a response that isn't `text/event-stream` (a
+4xx/5xx before the stream started) is parsed as JSON into `responseJson`,
+not as frames. Upstream keys never ride back in an `Exchange`:
+`serviceProxy.ts` masks `requestHeaders` server-side before returning it,
+on both transports, so there is no client-side "reveal" for them.
 
 **Options editors implement tick-to-omit semantics deliberately.** The AIR
 services' request schemas set `additionalProperties: false` and, for
@@ -202,7 +223,14 @@ expectations, because the gateway's policy is deliberately different
 outside `local` (this console's key holds `generate`, `admin_read` and
 `pin` there, not `embed`), and a "known gaps" group that asserts what the
 gateway's contract promises and fails until the matching gateway fix lands
-— move a row out of that group once it passes. What each class means is
+— move a row out of that group once it passes. The same tab keeps one call
+slot per route (`/v1/generate` and `/v1/embed` each show their own last
+answer) and keeps both forms mounted, so switching modes loses nothing. Its
+demo layer (`src/components/llm/demo.ts`: presets, which rung of the chain
+answered, embedding similarity) only *fills* the form and *reads* the
+answer. A preset remounts the form with its values, and the request is still
+exactly what the body preview shows, so don't let a preset send anything the
+form doesn't. What each class means is
 read live from the gateway's `GET /v1/capabilities`, never mirrored from
 its `deploy/routing.yaml` by hand; Vitest + a GitHub Actions CI
 workflow (`.github/workflows/ci.yml`) run lint/typecheck/test/build/Docker
@@ -220,7 +248,7 @@ build on every push and PR.
   release/handover gate. `make gateway-check` runs every gateway scenario
   headless through the BFF (console must be serving) and writes
   `bugs/model-gateway/last-run-<target>.txt`; it lives in
-  `scripts/*.live.test.ts` under `vitest.live.config.mts`, which `make check`
+  `tests/live/*.live.test.ts` under `tests/live/vitest.config.mts`, which `make check`
   and CI deliberately exclude because it needs live services and makes small
   paid calls.
 

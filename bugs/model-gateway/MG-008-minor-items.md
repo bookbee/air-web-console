@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | fixed |
+| **Status** | verified |
 | **Severity** | Low |
 | **Service** | air-model-gateway @ `29fc4aa` |
 | **Found** | 2026-10-25, **code reading, not reproduced live** (except where noted) |
@@ -81,7 +81,7 @@ resolved.
 
 ## Resolution
 
-Fixed in air-model-gateway `develop` on top of `29fc4aa`, **not yet committed** (the owner commits; add the commit here when it lands). `make verify` passes (324 tests); the repro was re-run live against the fixed build on 2026-10-25.
+Fixed in air-model-gateway `6357b7a` (on top of `29fc4aa`). `make verify` passes (343 tests).
 
 - ~~a~~ Documented: if `done` has `refusal: true`, discard the deltas. This is in the
   integration guide's streaming section, the OpenAPI description and the reference
@@ -105,3 +105,5 @@ Fixed in air-model-gateway `develop` on top of `29fc4aa`, **not yet committed** 
   `tests/test_config.py::test_unknown_keys_names_retired_and_misspelt_settings_only`.
 
 **Verifier, 2026-10-25 10:24:** `make gateway-check` against the uncommitted tree passes nothing automatically (code reading); the a–e changes were read in the diff, and the console scenarios now match the chosen fix. Set `verified` after the commit lands and the run is repeated against it.
+
+**Verifier, 2026-10-26** (run by the gateway session at the owner's request) against `4dd28b7` (revision `4dd28b76537b`, clean; `src/` identical to `6357b7a`), one listener on `:8083`: a, b and d read in the committed docs and code (integration guide, `openai_provider.py::_optional`, `policy/budget.py`); c: `deploy/pricing.yaml` `cache_write_ratio: 1.25`; e: the boot log lists `config.unknown_keys` with this machine's two retired keys. The gateway suite passes (343 tests). Status set to `verified`.

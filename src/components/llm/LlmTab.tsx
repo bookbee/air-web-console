@@ -7,6 +7,7 @@ import AccordionSummary from "@mui/material/AccordionSummary";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
@@ -23,12 +24,16 @@ import { SendRow } from "@/components/shared/SendRow";
 import { useSendRequest } from "@/hooks/useSendRequest";
 import type { Connection } from "@/lib/connection";
 import { sendViaProxy } from "@/lib/http/client";
-import { exchangeOk, joinUrl, type Exchange } from "@/lib/http/exchange";
+import { exchangeOk, joinUrl, type Exchange, type SseEvent } from "@/lib/http/exchange";
 
 import { CallSummary } from "./CallSummary";
 import { ChatFields, type ChatMessage } from "./ChatFields";
 import { rungFailures, type Capabilities, type Mode } from "./data";
+import { EMBED_PRESETS, GENERATE_PRESETS, presetBlocker, type EmbedPreset, type GeneratePreset } from "./demo";
+import { DemoPresets } from "./DemoPresets";
 import { EmbeddingsFields } from "./EmbeddingsFields";
+import { GatewayStatus } from "./GatewayStatus";
+import { LiveAnswer } from "./LiveAnswer";
 import { ModelChoices } from "./ModelChoices";
 import { OptionsEditor } from "./OptionsEditor";
 import { PolicyProbe } from "./PolicyProbe";
@@ -100,8 +105,21 @@ export function LlmTab({ connection }: { connection: Connection }) {
   const [embedBody, setEmbedBody] = useState<{ model: string; input: string[] }>({ model: "", input: [] });
   const [embedErrors, setEmbedErrors] = useState<string[]>([]);
   const [extras, setExtras] = useState<Record<string, unknown>>({});
+  // `stream: true` renders as it arrives unless unticked; unticked, the BFF
+  // collects the stream first, the transport the scenarios use.
+  const [liveOn, setLiveOn] = useState(true);
+  const [liveFrames, setLiveFrames] = useState<SseEvent[]>([]);
+  // A preset refills its mode's form by remounting it with the preset's values.
+  const [generatePreset, setGeneratePreset] = useState<GeneratePreset | null>(null);
+  const [embedPreset, setEmbedPreset] = useState<EmbedPreset | null>(null);
+  const [generateRound, setGenerateRound] = useState(0);
+  const [embedRound, setEmbedRound] = useState(0);
 
-  const mutation = useSendRequest(connection);
+  // One call slot per route, so switching modes shows that route's own last
+  // answer rather than the other route's.
+  const generateCall = useSendRequest(connection);
+  const embedCall = useSendRequest(connection);
+  const mutation = mode === "generate" ? generateCall : embedCall;
 
   // Per target: the chains behind each class differ by environment.
   const capabilitiesQuery = useQuery({
@@ -123,6 +141,7 @@ export function LlmTab({ connection }: { connection: Connection }) {
 
   const body: Record<string, unknown> = mode === "generate" ? { ...extras, messages } : { ...embedBody };
   const stream = mode === "generate" && body.stream === true;
+  const live = stream && liveOn;
   const path = PATHS[mode];
   const url = joinUrl(connection.baseUrl || "https://—", path);
 
@@ -133,6 +152,7 @@ export function LlmTab({ connection }: { connection: Connection }) {
         decides what serves each class and handles failover, retries, cost accounting and caching.
       </Typography>
       <TargetCaption connection={connection} />
+      {capabilities && <GatewayStatus capabilities={capabilities} />}
 
       <Accordion disableGutters elevation={0} defaultExpanded sx={{ border: 1, borderColor: "divider", "&:before": { display: "none" }, mb: 2 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -153,8 +173,8 @@ export function LlmTab({ connection }: { connection: Connection }) {
       </Accordion>
 
       <RadioGroup row value={mode} onChange={(e) => setMode(e.target.value as Mode)} sx={{ mb: 1 }}>
-        <FormControlLabel value="generate" control={<Radio size="small" />} label="POST /v1/generate" />
-        <FormControlLabel value="embed" control={<Radio size="small" />} label="POST /v1/embed" />
+        <FormControlLabel value="generate" control={<Radio size="small" />} label="Generate text · POST /v1/generate" />
+        <FormControlLabel value="embed" control={<Radio size="small" />} label="Embed · POST /v1/embed" />
       </RadioGroup>
 
       {mode === "generate" ? (
@@ -192,16 +212,36 @@ export function LlmTab({ connection }: { connection: Connection }) {
 
       <Divider sx={{ my: 2 }} />
 
-      {mode === "generate" ? (
-        <>
-          <ChatFields onChange={(next, nextErrors) => { setMessages(next); setChatErrors(nextErrors); }} />
-          <Box sx={{ mt: 2 }}>
-            <OptionsEditor capabilities={capabilities} onChange={setExtras} />
-          </Box>
-        </>
-      ) : (
-        <EmbeddingsFields capabilities={capabilities} onChange={(next, nextErrors) => { setEmbedBody(next); setEmbedErrors(nextErrors); }} />
-      )}
+      {/* Both forms stay mounted, so switching modes keeps what was typed. */}
+      <Box sx={{ display: mode === "generate" ? "block" : "none" }}>
+        <DemoPresets
+          presets={GENERATE_PRESETS}
+          picked={generatePreset}
+          blockerFor={(preset) => presetBlocker(capabilities, preset.needs)}
+          onPick={(preset) => { setGeneratePreset(preset); setGenerateRound((round) => round + 1); }}
+        />
+        <ChatFields
+          key={`chat-${generateRound}`}
+          initialText={generatePreset?.message}
+          onChange={(next, nextErrors) => { setMessages(next); setChatErrors(nextErrors); }}
+        />
+        <Box sx={{ mt: 2 }}>
+          <OptionsEditor key={`options-${generateRound}`} capabilities={capabilities} initial={generatePreset?.options} onChange={setExtras} />
+        </Box>
+      </Box>
+      <Box sx={{ display: mode === "embed" ? "block" : "none" }}>
+        <DemoPresets
+          presets={EMBED_PRESETS}
+          picked={embedPreset}
+          onPick={(preset) => { setEmbedPreset(preset); setEmbedRound((round) => round + 1); }}
+        />
+        <EmbeddingsFields
+          key={`embed-${embedRound}`}
+          capabilities={capabilities}
+          initial={embedPreset ?? undefined}
+          onChange={(next, nextErrors) => { setEmbedBody(next); setEmbedErrors(nextErrors); }}
+        />
+      </Box>
 
       <Accordion disableGutters elevation={0} sx={{ border: 1, borderColor: "divider", "&:before": { display: "none" }, mt: 1.5 }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -217,10 +257,32 @@ export function LlmTab({ connection }: { connection: Connection }) {
         connection={connection}
         errors={errors}
         loading={mutation.isPending}
-        onSend={() => mutation.mutate({ path, method: "POST", body, stream })}
+        onSend={() => {
+          setLiveFrames([]);
+          mutation.mutate({
+            path,
+            method: "POST",
+            body,
+            stream,
+            live,
+            onFrame: (frame) => setLiveFrames((frames) => [...frames, frame]),
+          });
+        }}
+        extra={
+          stream ? (
+            <FormControlLabel
+              control={<Checkbox size="small" checked={liveOn} onChange={(e) => setLiveOn(e.target.checked)} />}
+              label={<Typography variant="body2">Render live</Typography>}
+            />
+          ) : undefined
+        }
       />
 
-      {mutation.data ? (
+      {mutation.isPending && mutation.variables?.live ? (
+        <Box sx={{ mt: 2 }}>
+          <LiveAnswer frames={liveFrames} />
+        </Box>
+      ) : mutation.data ? (
         <Box sx={{ mt: 2 }}>
           <Typography
             sx={{ fontSize: "0.74rem", fontWeight: 600, letterSpacing: "0.8px", textTransform: "uppercase", color: "text.secondary", mb: 1 }}
@@ -231,12 +293,12 @@ export function LlmTab({ connection }: { connection: Connection }) {
           <ResponseView
             exchange={mutation.data as Exchange}
             storageKey="llm"
-            summary={(_payload, exchange) => <CallSummary exchange={exchange} />}
+            summary={(_payload, exchange) => <CallSummary exchange={exchange} capabilities={capabilities} />}
           />
         </Box>
       ) : (
         <Typography color="text.secondary" sx={{ mt: 2, fontStyle: "italic" }}>
-          No call sent yet this session.
+          No {path} call sent yet this session.
         </Typography>
       )}
 

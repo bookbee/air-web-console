@@ -23,6 +23,11 @@ export interface ForwardOptions {
   timeoutSeconds: number;
   verifyTls: boolean;
   body?: unknown;
+  /** Stream only: aborts the upstream call (the browser went away). */
+  signal?: AbortSignal;
+  /** Stream only: called with each frame the moment it is read, for the
+   * live transport (`live.ts`). The Exchange still collects every frame. */
+  onEvent?: (event: SseEvent) => void;
 }
 
 function buildHeaders(apiKey: string, accept: string): Record<string, string> {
@@ -150,7 +155,11 @@ function parseSseFrames(raw: string): SseEvent[] {
  * Exchange, but the stamps keep what a live view would have shown: time to
  * first token, and whether anything between here and the service buffered
  * the stream (every frame arriving at the same instant). */
-async function readSseEvents(body: AsyncIterable<Uint8Array> | null, started: number): Promise<SseEvent[]> {
+async function readSseEvents(
+  body: AsyncIterable<Uint8Array> | null,
+  started: number,
+  onEvent?: (event: SseEvent) => void,
+): Promise<SseEvent[]> {
   if (!body) return [];
   const events: SseEvent[] = [];
   const decoder = new TextDecoder();
@@ -161,7 +170,11 @@ async function readSseEvents(body: AsyncIterable<Uint8Array> | null, started: nu
     buffer = final ? "" : (blocks.pop() ?? "");
     const at = Math.round(performance.now() - started);
     for (const block of blocks) {
-      for (const event of parseSseFrames(`${block}\n\n`)) events.push({ ...event, received_ms: at });
+      for (const event of parseSseFrames(`${block}\n\n`)) {
+        const stamped = { ...event, received_ms: at };
+        events.push(stamped);
+        onEvent?.(stamped);
+      }
     }
   };
   for await (const chunk of body) {
@@ -174,10 +187,9 @@ async function readSseEvents(body: AsyncIterable<Uint8Array> | null, started: nu
 }
 
 /** Perform the call as a real SSE request and collect every frame into one
- * Exchange once the stream closes. Collected rather than piped live to the
- * browser: this exercises the real wire mechanics (the Accept header, one
- * long-lived stream, event:/data: framing) without needing incremental-
- * render plumbing the response pane doesn't have. */
+ * Exchange once the stream closes. That Exchange is the whole answer for the
+ * collected transport; the live transport also passes each frame on through
+ * `onEvent` as it arrives (see `live.ts`), then sends the same Exchange. */
 export async function forwardStreamRequest(options: ForwardOptions): Promise<Exchange> {
   const headers = buildHeaders(options.apiKey, "text/event-stream");
   const requestBody = options.body !== undefined ? options.body : null;
@@ -198,12 +210,13 @@ export async function forwardStreamRequest(options: ForwardOptions): Promise<Exc
   };
 
   const started = performance.now();
+  const timeout = AbortSignal.timeout(options.timeoutSeconds * 1000);
   try {
     const response = await undiciFetch(options.url, {
       method: options.method.toUpperCase(),
       headers,
       body: requestBody !== null ? JSON.stringify(requestBody) : undefined,
-      signal: AbortSignal.timeout(options.timeoutSeconds * 1000),
+      signal: options.signal ? AbortSignal.any([timeout, options.signal]) : timeout,
       dispatcher: dispatcherFor(options.verifyTls),
     });
     exchange.statusCode = response.status;
@@ -225,14 +238,16 @@ export async function forwardStreamRequest(options: ForwardOptions): Promise<Exc
       }
       return exchange;
     }
-    exchange.events = await readSseEvents(response.body, started);
+    exchange.events = await readSseEvents(response.body, started, options.onEvent);
     exchange.elapsedMs = performance.now() - started;
     exchange.responseText = exchange.events
       .map((event) => `event: ${event.event}\ndata: ${JSON.stringify({ ...event, received_ms: undefined })}\n`)
       .join("\n");
   } catch (error) {
     exchange.elapsedMs = performance.now() - started;
-    exchange.error = describeError(error, options.url, options.timeoutSeconds);
+    exchange.error = options.signal?.aborted
+      ? "Cancelled: the browser closed the live stream, so the service was disconnected too."
+      : describeError(error, options.url, options.timeoutSeconds);
   }
   return exchange;
 }
