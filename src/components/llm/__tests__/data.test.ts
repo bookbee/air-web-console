@@ -86,7 +86,7 @@ describe("SCENARIOS", () => {
 
   it("never targets the removed /v1/inference outside the scenarios that prove it is gone", () => {
     const old = SCENARIOS.filter((s) => s.path === "/v1/inference").map((s) => s.id);
-    expect(old.sort()).toEqual(["gap-404-problem", "inference-removed"]);
+    expect(old.sort()).toEqual(["404-problem", "inference-removed"]);
   });
 
   it("streams exactly the scenarios whose body asks for it", () => {
@@ -116,10 +116,11 @@ describe("tally", () => {
     expect(counts.gapsFixed).toEqual([]);
   });
 
-  it("names a known gap that now passes by its bug id", () => {
-    const counts = tally(SCENARIOS.map((scenario) => ({ scenario, failure: null })));
-    expect(counts.gapsFixed).toContain("MG-001");
-    expect(counts.gapsFixed).toContain("MG-005");
+  it("names a known gap that now passes by its bug id, once", () => {
+    const gap = { ...SCENARIOS[0], group: "known gaps" as const, bug: "MG-999" };
+    const counts = tally([gap, gap, ...SCENARIOS].map((scenario) => ({ scenario, failure: null })));
+    expect(counts.gapsFixed).toEqual(["MG-999"]);
+    expect(counts.contractTotal).toBe(SCENARIOS.length);
   });
 
   it("gives every known gap a report under bugs/model-gateway/", () => {

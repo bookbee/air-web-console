@@ -132,6 +132,7 @@ export function ScenarioPanel({ connection }: { connection: Connection }) {
         <TableBody>
           {SCENARIOS.map((scenario) => {
             const outcome = outcomes[scenario.id];
+            const isGap = scenario.group === "known gaps";
             return (
               <TableRow
                 key={scenario.id}
@@ -156,8 +157,8 @@ export function ScenarioPanel({ connection }: { connection: Connection }) {
                   ) : outcome ? (
                     <Chip
                       size="small"
-                      color={outcome.failure === null ? (scenario.bug ? "info" : "success") : scenario.bug ? "warning" : "error"}
-                      label={outcome.failure === null ? (scenario.bug ? "pass: fix landed?" : "pass") : scenario.bug ? `open: ${outcome.failure}` : outcome.failure}
+                      color={outcome.failure === null ? (isGap ? "info" : "success") : isGap ? "warning" : "error"}
+                      label={outcome.failure === null ? (isGap ? "pass: fix landed?" : "pass") : isGap ? `open: ${outcome.failure}` : outcome.failure}
                       sx={{ maxWidth: 260 }}
                     />
                   ) : (

@@ -10,22 +10,23 @@ statuses and severities are in [../README.md](../README.md).
 | **Found** | 2026-10-25 |
 | **Environment** | `local` policy; gateway on `127.0.0.1:8083`; Ollama on `:11434`, llama.cpp on `:8181`; Anthropic and Gemini keys set, OpenAI not set |
 | **Gateway's own suite** | 297 tests pass at that commit, so none of these bugs is caught by its tests |
-| **Re-checked** | 2026-10-25 10:24 against the gateway's uncommitted fixes (52 files on top of `29fc4aa`): its `make verify` passes (324 tests), and this console's `make gateway-check` passes 34/34 contract scenarios and all 8 known-gap scenarios. See [last-run-local.txt](last-run-local.txt) and [READINESS.md](READINESS.md) |
+| **Re-checked** | 2026-10-25 12:05 against gateway revision `6357b7a992e6-dirty` (one process on `:8083`, no reload): `make gateway-check` contract 34/34, all 8 known gaps passing; MG-009 re-run by hand and fixed. Earlier: 2026-10-25 10:24 against the gateway's uncommitted fixes (52 files on top of `29fc4aa`): its `make verify` passes (324 tests), and this console's `make gateway-check` passes 34/34 contract scenarios and all 8 known-gap scenarios. See [last-run-local.txt](last-run-local.txt) and [READINESS.md](READINESS.md) |
+| **Verified** | 2026-10-25 12:13 against `6357b7a` (one listener, revision `6357b7a992e6-dirty`: docs, tests and `.env.example` only). Contract 42/42. MG-001 to MG-005 are `verified`, and their scenarios moved out of *known gaps* |
 
 ## Index
 
 | ID | Severity | Status | Title | Console scenario |
 |---|---|---|---|---|
-| [MG-001](MG-001-gemini-nullable-schema.md) | High | fixed, uncommitted | Gemini structured output crashes on a nullable field; `cloud` silently fails over at ~7× cost | `gap-gemini-nullable-schema` |
-| [MG-002](MG-002-unpriced-pin-bypasses-budget.md) | High | fixed, uncommitted | A pin to a paid model missing from `pricing.yaml` costs $0 and bypasses the daily budget | `gap-unpriced-pin` |
-| [MG-003](MG-003-404-405-not-problem-json.md) | Medium | fixed, uncommitted | 404 and 405 bodies aren't problem+json (no `code`, no `request_id`) | `gap-404-problem`, `gap-405-problem` |
-| [MG-004](MG-004-capabilities-lists-unusable-embed.md) | Medium | fixed, uncommitted | `/v1/capabilities` marks `cloud-1536-v1` allowed when its only provider isn't configured | `gap-capabilities-usable` |
-| [MG-005](MG-005-client-errors-as-retryable-502.md) | Medium | fixed, uncommitted | Non-retryable provider 4xx errors come back as retryable `502 provider_unavailable`; inputs are uncapped | `gap-pin-unknown-model`, `gap-embed-too-many`, `gap-too-many-messages` |
-| [MG-006](MG-006-ollama-error-body-dropped.md) | Low | fixed, uncommitted | The Ollama adapter drops Ollama's error message | `gap-pin-unknown-model` (detail check) |
-| [MG-007](MG-007-malformed-json-before-auth.md) | Low | fixed, uncommitted | An unauthenticated request with malformed JSON gets 422, not 401 | none (the BFF always sends a key; manual repro) |
-| [MG-008](MG-008-minor-items.md) | Low | fixed, uncommitted | Minor items (streamed refusal, OpenAI params, cache-write pricing, budget race, stale `.env`) | none (code reading) |
-| [MG-009](MG-009-invalid-provider-key-silent.md) | High | open | An invalid provider key is silent: cloud traffic moves to a pricier provider, readiness stays green, a pin blames the caller | none (needs a bad key; manual repro) |
-| [MG-010](MG-010-no-build-identity.md) | Medium | open | The gateway doesn't report which build it is, so a test run can't prove what it tested | none |
+| [MG-001](MG-001-gemini-nullable-schema.md) | High | verified | Gemini structured output crashes on a nullable field; `cloud` silently fails over at ~7× cost | `gemini-nullable-schema` |
+| [MG-002](MG-002-unpriced-pin-bypasses-budget.md) | High | verified | A pin to a paid model missing from `pricing.yaml` costs $0 and bypasses the daily budget | `unpriced-pin` |
+| [MG-003](MG-003-404-405-not-problem-json.md) | Medium | verified | 404 and 405 bodies aren't problem+json (no `code`, no `request_id`) | `404-problem`, `405-problem` |
+| [MG-004](MG-004-capabilities-lists-unusable-embed.md) | Medium | verified | `/v1/capabilities` marks `cloud-1536-v1` allowed when its only provider isn't configured | `capabilities-usable` |
+| [MG-005](MG-005-client-errors-as-retryable-502.md) | Medium | verified | Non-retryable provider 4xx errors come back as retryable `502 provider_unavailable`; inputs are uncapped | `pin-unknown-model`, `embed-too-many`, `too-many-messages` |
+| [MG-006](MG-006-ollama-error-body-dropped.md) | Low | fixed (`6357b7a`) | The Ollama adapter drops Ollama's error message | `pin-unknown-model` (detail check) |
+| [MG-007](MG-007-malformed-json-before-auth.md) | Low | fixed (`6357b7a`) | An unauthenticated request with malformed JSON gets 422, not 401 | none (the BFF always sends a key; manual repro) |
+| [MG-008](MG-008-minor-items.md) | Low | fixed (`6357b7a`) | Minor items (streamed refusal, OpenAI params, cache-write pricing, budget race, stale `.env`) | none (code reading) |
+| [MG-009](MG-009-invalid-provider-key-silent.md) | High | fixed, verified live; commit pending | An invalid provider key is silent: cloud traffic moves to a pricier provider, readiness stays green, a pin blames the caller | none (needs a bad key; manual repro) |
+| [MG-010](MG-010-no-build-identity.md) | Medium | fixed, verified live; commit pending | The gateway doesn't report which build it is, so a test run can't prove what it tested | none |
 
 ## Test setup
 
@@ -63,8 +64,8 @@ With the console serving (`make dev`), either:
 
 Before trusting a run, check which gateway process answered it. Only one
 should be listening (`lsof -nP -iTCP:8083 -sTCP:LISTEN`), and it should have
-started after the last code change, or use `--reload`. Until MG-010 is
-fixed, the gateway can't tell you this itself.
+started without `--reload` after the last code change. The report header
+records `/v1/health`'s `revision`; `-dirty` means uncommitted code (MG-010).
 
 ## What was checked and works
 

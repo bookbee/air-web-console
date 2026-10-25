@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| **Status** | fixed |
+| **Status** | verified |
 | **Severity** | Medium |
 | **Service** | air-model-gateway @ `29fc4aa` |
 | **Found** | 2026-10-25, live call |
-| **Console scenario** | `gap-404-problem` |
+| **Console scenario** | `404-problem`, `405-problem` (contract edges; was `gap-404-problem`, `gap-405-problem`) |
 
 ## Summary
 
@@ -77,3 +77,5 @@ Fixed in air-model-gateway `develop` on top of `29fc4aa`, **not yet committed** 
 - Live: both repros return problem+json with `code` and `request_id`.
 
 **Verifier, 2026-10-25 10:24:** `make gateway-check` against the uncommitted tree passes `gap-404-problem` and the new `gap-405-problem`, and the console scenarios now match the chosen fix. Set `verified` after the commit lands and the run is repeated against it.
+
+**Verifier, 2026-10-25 12:13: verified** against air-model-gateway `6357b7a` ("Unit test and fixes."). `/v1/health` reports revision `6357b7a992e6-dirty`; the uncommitted files are docs, tests and `.env.example`, none under `src/`. Exactly one listener on `127.0.0.1:8083`, started 12:05, after the commit. Console `make gateway-check`: contract 42/42 passed, including `404-problem`, `405-problem`. Each one has moved out of *known gaps* into *contract edges*, where it now guards against a regression. See [last-run-local.txt](last-run-local.txt).

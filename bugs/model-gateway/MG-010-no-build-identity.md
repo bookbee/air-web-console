@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | open |
+| **Status** | fixed (in air-model-gateway `6357b7a` plus its uncommitted tree; verified live) |
 | **Severity** | Medium (assurance and operations, not runtime behaviour) |
 | **Service** | air-model-gateway @ `29fc4aa` |
 | **Found** | 2026-10-25, live call and code reading |
@@ -53,4 +53,19 @@ SHA, whether the tree was dirty, and the build time.
 
 ## Resolution
 
-_Not yet._
+Fixed in air-model-gateway:
+- **Setting.** `Settings.revision` (`AIR_MODEL_GATEWAY_REVISION`, default `unknown`).
+- **Image.** The Dockerfile's `REVISION` build arg sets it, along with the
+  `org.opencontainers.image.revision` label. CI and Deploy pass the commit SHA.
+- **Local builds.** The Makefile exports `git describe --always --dirty --abbrev=12`
+  for `make run` and for every image it builds (compose and kind).
+- **Where it shows:** `/v1/health` and `/v1/capabilities` (`revision`), the
+  `air-model-gateway.start` log line, and `air_model_gateway_build_info{version,revision}`.
+- **Test:** `tests/test_system.py`.
+
+**Live re-check, 2026-10-25:** this console's `make gateway-check` report header now
+reads `health {"status":"ok","version":"0.1.0","revision":"6357b7a992e6-dirty"}`
+([last-run-local.txt](last-run-local.txt)). The integration stack (`:9083`) and kind
+report the same revision.
+
+Commit: pending (the gateway owner commits).

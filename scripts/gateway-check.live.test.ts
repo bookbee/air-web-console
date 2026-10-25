@@ -50,7 +50,8 @@ it("air-model-gateway meets its contract", async () => {
     if (scenario.repeat && !exchange.error) exchange = await send(scenario.path, scenario.method, scenario.body, scenario.stream);
     const failure = judge(exchange, expectationFor(scenario, environment));
     results.push({ scenario, failure });
-    const verdict = failure === null ? (scenario.bug ? "FIXED?" : "PASS") : scenario.bug ? "OPEN" : "FAIL";
+    const isGap = scenario.group === "known gaps";
+    const verdict = failure === null ? (isGap ? "FIXED?" : "PASS") : isGap ? "OPEN" : "FAIL";
     rows.push(`${verdict.padEnd(7)} ${scenario.group.padEnd(15)} ${scenario.id.padEnd(30)} ${scenario.bug ?? ""} ${failure ?? ""}`.trimEnd());
   }
 

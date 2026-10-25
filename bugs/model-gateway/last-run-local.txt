@@ -1,6 +1,6 @@
-air-model-gateway contract run · 2026-10-25T04:58:27.406Z
+air-model-gateway contract run · 2026-10-25T06:43:21.944Z
 console http://127.0.0.1:3000 · target local · gateway http://127.0.0.1:8083
-gateway reports environment local · health {"status":"ok","version":"0.1.0"}
+gateway reports environment local · health {"status":"ok","version":"0.1.0","revision":"6357b7a992e6-dirty"}
 
 PASS    happy path      health
 PASS    happy path      ready
@@ -36,13 +36,13 @@ PASS    rejections      unpublished-embed
 PASS    rejections      legacy-embed-alias
 PASS    rejections      embed-no-input
 PASS    rejections      inference-removed
-FIXED?  known gaps      gap-gemini-nullable-schema     MG-001
-FIXED?  known gaps      gap-unpriced-pin               MG-002
-FIXED?  known gaps      gap-404-problem                MG-003
-FIXED?  known gaps      gap-capabilities-usable        MG-004
-FIXED?  known gaps      gap-405-problem                MG-003
-FIXED?  known gaps      gap-pin-unknown-model          MG-005
-FIXED?  known gaps      gap-embed-too-many             MG-005
-FIXED?  known gaps      gap-too-many-messages          MG-005
+PASS    happy path      gemini-nullable-schema         MG-001
+PASS    rejections      unpriced-pin                   MG-002
+PASS    contract edges  404-problem                    MG-003
+PASS    contract edges  capabilities-usable            MG-004
+PASS    contract edges  405-problem                    MG-003
+PASS    rejections      pin-unknown-model              MG-005
+PASS    rejections      embed-too-many                 MG-005
+PASS    rejections      too-many-messages              MG-005
 
-contract 34/34 passed · known gaps open 0 · now passing (verify, then move out of known gaps): MG-001, MG-002, MG-003, MG-004, MG-005
+contract 42/42 passed · known gaps open 0

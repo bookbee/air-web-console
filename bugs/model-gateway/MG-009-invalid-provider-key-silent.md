@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | open |
+| **Status** | fixed (in air-model-gateway `6357b7a` plus its uncommitted tree; verified live) |
 | **Severity** | High |
 | **Service** | air-model-gateway @ `29fc4aa` plus its uncommitted working tree as of 2026-10-25 09:17 |
 | **Found** | 2026-10-25, live calls on a second instance with a deliberately invalid Gemini key |
@@ -98,4 +98,37 @@ costs a fraction of a cent.
 
 ## Resolution
 
-_Not yet._
+Fixed in air-model-gateway as suggested, all three parts:
+
+1. **Classification.** `gateway/base.py` adds `AUTH_STATUSES` (401, 402, 403) and
+   `ProviderError.auth`/`reason`. `_common.is_auth_failure` also recognises account
+   failures that providers spell otherwise:
+   - Google's 400 `API_KEY_INVALID`;
+   - Anthropic's 400 "credit balance is too low";
+   - OpenAI's 429 `insufficient_quota`.
+
+   An auth failure is never `rejected`, throttled or retried. An all-auth chain is
+   `502 provider_unavailable`, with a detail saying the gateway's key was refused.
+2. **Metric.** `air_model_gateway_rung_failures_total{provider,model,reason}` counts
+   every failed rung. The reasons are auth, not_configured, rate_limited, rejected,
+   not_found, timeout, unavailable, adapter and other. It replaces
+   `adapter_errors_total`, which is now `reason="adapter"`. Alerts are in the
+   gateway's `03-deployment.md` §5, and `provider.failed` logs at error level for
+   auth.
+3. **Readiness.** After 3 consecutive auth failures `/v1/ready` reports the provider
+   false; the next success clears it. The overall status stays ready while any
+   provider answers.
+
+**Tests:** `tests/test_gateway.py` covers each provider's error shape, the 502 with no
+retry, and readiness.
+
+**Live re-check, 2026-10-25** (revision `6357b7a992e6-dirty`, invalid Gemini key, port
+8084), repeating the repro above:
+- **Pin:** `502 provider_unavailable`, detail `gemini: credentials or account refused
+  (the gateway's gemini key is invalid, ...)`.
+- **`cloud` with `provider: gemini`:** `200` from `anthropic` / `claude-haiku-4-5`.
+- **`/v1/ready`:** `"gemini": false`.
+- **`/metrics`:**
+  `rung_failures_total{model="gemini-2.5-flash",provider="gemini",reason="auth"} 4`.
+
+Commit: pending (the gateway owner commits).

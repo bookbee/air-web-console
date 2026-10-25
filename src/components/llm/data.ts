@@ -113,7 +113,8 @@ export interface Scenario {
   shared?: Expectation;
   /** Shown beside the result: what the scenario is for, or what it needs. */
   note: string;
-  /** Known gaps only: the report under bugs/model-gateway/ this row tracks. */
+  /** The report under bugs/model-gateway/ this row came from: open while the
+   * row is in known gaps, then kept on the row that guards the fix. */
   bug?: string;
 }
 
@@ -582,10 +583,10 @@ export const SCENARIOS: readonly Scenario[] = [
     note: "The old route is gone.",
   },
 
-  // ---- known gaps: fail until the gateway fix lands -----------------------------
+  // ---- fixed gateway bugs: each row guards its fix against a regression ---------
   {
-    id: "gap-gemini-nullable-schema",
-    group: "known gaps",
+    id: "gemini-nullable-schema",
+    group: "happy path",
     bug: "MG-001",
     label: "Gemini structured output, nullable field",
     method: "POST",
@@ -599,22 +600,22 @@ export const SCENARIOS: readonly Scenario[] = [
       cache: false,
     },
     local: { status: 200, check: (b) => expect(isJson(b.content), "content is not JSON") },
-    note: "A union type crashes the Gemini adapter; under cloud it silently fails over to a pricier rung. Needs a Gemini key.",
+    note: "A union type used to crash the Gemini adapter, and under cloud traffic silently failed over to a pricier rung. Needs a Gemini key.",
   },
   {
-    id: "gap-unpriced-pin",
-    group: "known gaps",
+    id: "unpriced-pin",
+    group: "rejections",
     bug: "MG-002",
     label: "Pin to an unpriced paid model is refused",
     method: "POST",
     path: "/v1/generate",
     body: { pin: "anthropic:claude-sonnet-4-5", messages: HI, max_tokens: 5, cache: false },
     local: { status: 422, code: "invalid_model_choice" },
-    note: "A pin to a model missing from pricing.yaml would bill at the provider and count $0 against daily_budget_usd. No paid call when fixed.",
+    note: "A pin to a model missing from pricing.yaml would bill at the provider and count $0 against daily_budget_usd. Refused before any paid call.",
   },
   {
-    id: "gap-404-problem",
-    group: "known gaps",
+    id: "404-problem",
+    group: "contract edges",
     bug: "MG-003",
     label: "404 is problem+json",
     method: "POST",
@@ -624,11 +625,11 @@ export const SCENARIOS: readonly Scenario[] = [
       status: 404,
       check: (b) => all(expect(typeof b.code === "string", "no code in body"), expect(typeof b.request_id === "string", "no request_id in body")),
     },
-    note: "\"Every error body is application/problem+json\"; routing errors are FastAPI's plain {detail}.",
+    note: "\"Every error body is application/problem+json\", routing errors included (they used to be FastAPI's plain {detail}).",
   },
   {
-    id: "gap-capabilities-usable",
-    group: "known gaps",
+    id: "capabilities-usable",
+    group: "contract edges",
     bug: "MG-004",
     label: "Capabilities offers only usable choices",
     method: "GET",
@@ -644,11 +645,11 @@ export const SCENARIOS: readonly Scenario[] = [
         return expect(silent.length === 0, `no available:false on: ${silent.join(", ")}`);
       },
     },
-    note: "An allowed embedding name whose one provider isn't configured can never answer; capabilities must say so (available: false).",
+    note: "An allowed embedding name whose one provider isn't configured can never answer, so capabilities says so (available: false).",
   },
   {
-    id: "gap-405-problem",
-    group: "known gaps",
+    id: "405-problem",
+    group: "contract edges",
     bug: "MG-003",
     label: "405 is problem+json",
     method: "GET",
@@ -660,8 +661,8 @@ export const SCENARIOS: readonly Scenario[] = [
     note: "A wrong method is an error like any other.",
   },
   {
-    id: "gap-pin-unknown-model",
-    group: "known gaps",
+    id: "pin-unknown-model",
+    group: "rejections",
     bug: "MG-005",
     label: "Pin to a model the provider lacks is the caller's 422",
     method: "POST",
@@ -676,8 +677,8 @@ export const SCENARIOS: readonly Scenario[] = [
     note: "Retrying can't help, so it must not be a 502. Also checks MG-006 (the provider's reason is kept).",
   },
   {
-    id: "gap-embed-too-many",
-    group: "known gaps",
+    id: "embed-too-many",
+    group: "rejections",
     bug: "MG-005",
     label: "Oversized embed batch is refused up front",
     method: "POST",
@@ -688,8 +689,8 @@ export const SCENARIOS: readonly Scenario[] = [
     note: "More than 2,048 texts: an immediate 422, not a provider tied up before a 502.",
   },
   {
-    id: "gap-too-many-messages",
-    group: "known gaps",
+    id: "too-many-messages",
+    group: "rejections",
     bug: "MG-005",
     label: "Oversized conversation is refused up front",
     method: "POST",
@@ -699,6 +700,10 @@ export const SCENARIOS: readonly Scenario[] = [
     shared: { status: 422, code: "validation_error" },
     note: "More than 500 messages: 422 before any provider is called.",
   },
+
+  // ---- known gaps: one row per open bug with a live repro (bugs/README.md). It
+  // asserts what the contract promises, so it fails until the gateway fix lands.
+  // None open right now.
 ];
 
 export function expectationFor(scenario: Scenario, environment: string | null): Expectation {
