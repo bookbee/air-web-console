@@ -96,7 +96,7 @@ export function SummaryRefreshSummary({ payload }: { payload: unknown }) {
 
       {degraded && (
         <Alert severity="warning" sx={{ mb: 1.5 }}>
-          The narrative-refresh call failed, or air-llm&apos;s summary model isn&apos;t
+          The narrative-refresh call failed, or air-model-gateway&apos;s summary model isn&apos;t
           configured — the narrative below is carried over unchanged from{" "}
           <code>existing_summary</code>. The rollup and item verdicts are unaffected.
         </Alert>

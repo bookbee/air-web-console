@@ -184,9 +184,9 @@ export function Sidebar() {
           <Divider sx={{ my: 2 }} />
 
           <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            air-llm
+            air-model-gateway
           </Typography>
-          <ServiceStatus label="Base URL" baseUrl={target.llmBaseUrl} keyed={target.llmKeyed} route="/v1/inference" />
+          <ServiceStatus label="Base URL" baseUrl={target.llmBaseUrl} keyed={target.llmKeyed} route="/v1/generate" />
         </>
       ) : (
         <Typography variant="caption" color="error">

@@ -6,17 +6,19 @@ import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 
+import { ModelChoices } from "@/components/llm/ModelChoices";
+import type { Capabilities } from "@/components/llm/data";
 import { DataTable } from "@/components/shared/DataTable";
 
 /**
  * Health/readiness/capabilities summaries — ported from `tabs/system.py`.
- * air-classifier-service, air-orchestrator-service and air-llm each answer `/v1/capabilities`
+ * air-classifier-service, air-orchestrator-service and air-model-gateway each answer `/v1/capabilities`
  * and `/v1/ready` with a different shape, so these renderers follow
  * whichever fields the payload actually has rather than one service's
  * schema, exactly like the Python version.
  */
 
-const HEADLINE_KEYS = ["service", "version", "env", "channel", "environment", "default_model"];
+const HEADLINE_KEYS = ["service", "version", "env", "channel", "environment"];
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -71,7 +73,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ProviderMapBlock({ payload }: { payload: Record<string, unknown> }) {
+/** air-model-gateway's `providers` map means different things per probe:
+ * on `/v1/ready` whether each provider answered its health check, on
+ * `/v1/capabilities` only whether it is configured (has a key or base URL). */
+function ProviderMapBlock({
+  payload,
+  meaning,
+}: {
+  payload: Record<string, unknown>;
+  meaning: "reachable" | "configured";
+}) {
   const providers = asRecord(payload.providers);
   const entries = Object.entries(providers);
   if (entries.length === 0) return null;
@@ -79,10 +90,14 @@ function ProviderMapBlock({ payload }: { payload: Record<string, unknown> }) {
   return (
     <Section title="Providers">
       <DataTable
-        rows={entries.map(([name, ok]) => ({ provider: name, reachable: ok }))}
-        columns={[{ key: "provider", label: "provider" }, { key: "reachable", label: "reachable" }]}
+        rows={entries.map(([name, ok]) => ({ provider: name, [meaning]: ok }))}
+        columns={[{ key: "provider", label: "provider" }, { key: meaning, label: meaning }]}
       />
-      {down.length > 0 && <Alert severity="warning" sx={{ mt: 1 }}>Unreachable: {down.join(", ")}</Alert>}
+      {down.length > 0 && (
+        <Alert severity="warning" sx={{ mt: 1 }}>
+          {meaning === "reachable" ? "Unreachable" : "Not configured"}: {down.join(", ")}
+        </Alert>
+      )}
     </Section>
   );
 }
@@ -93,7 +108,20 @@ export function CapabilitiesSummary({ payload }: { payload: unknown }) {
 
   const tiers = Array.isArray(body.tiers) ? (body.tiers as Record<string, unknown>[]) : [];
   const languages = Array.isArray(body.supported_languages) ? (body.supported_languages as string[]) : [];
-  const handled = new Set([...HEADLINE_KEYS, "max_batch_items", "max_text_chars", "tiers", "supported_languages", "providers"]);
+  const handled = new Set([
+    ...HEADLINE_KEYS,
+    "max_batch_items",
+    "max_text_chars",
+    "tiers",
+    "supported_languages",
+    "providers",
+    // air-model-gateway's model choices, rendered as one block below.
+    "generate",
+    "embed",
+    "preferred_providers",
+    "may_pin",
+  ]);
+  const gatewayChoices = Boolean(body.generate) && typeof body.generate === "object";
   const unavailable = tiers.filter((t) => t.enabled && !t.available).map((t) => String(t.tier));
 
   return (
@@ -126,7 +154,13 @@ export function CapabilitiesSummary({ payload }: { payload: unknown }) {
         </Section>
       )}
 
-      <ProviderMapBlock payload={body} />
+      <ProviderMapBlock payload={body} meaning="configured" />
+
+      {gatewayChoices && (
+        <Section title="Model choices">
+          <ModelChoices capabilities={body as Capabilities} />
+        </Section>
+      )}
 
       {Object.entries(body).map(([key, value]) => {
         if (handled.has(key)) return null;
@@ -163,6 +197,9 @@ export function ReadinessSummary({ payload }: { payload: unknown }) {
   const facts: [string, string][] = [];
   if ("status" in body) facts.push(["Status", String(body.status)]);
   if ("ready" in body) facts.push(["Ready", body.ready ? "yes" : "no"]);
+  // air-model-gateway reports Redis only when it's configured, and never
+  // lets it gate readiness — a "no" here means degraded caching, not down.
+  if ("redis" in body) facts.push(["Redis", body.redis ? "up" : "down (not gating)"]);
   for (const key of ["service", "version", "checked_at"]) {
     if (key in body) facts.push([key.replace(/_/g, " "), String(body[key])]);
   }
@@ -182,7 +219,7 @@ export function ReadinessSummary({ payload }: { payload: unknown }) {
         </Grid>
       )}
 
-      <ProviderMapBlock payload={body} />
+      <ProviderMapBlock payload={body} meaning="reachable" />
 
       {["components", "dependencies"].map((key) => {
         const rows = body[key];

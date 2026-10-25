@@ -19,18 +19,21 @@ fourth variant.
 
 air-web-console is a Next.js (App Router) console for hand-testing,
 integrating with, and evaluating the AIR platform services —
-**air-classifier-service**, **air-orchestrator-service**, **air-llm** — individually and as an
+**air-classifier-service**, **air-orchestrator-service**, **air-model-gateway** — individually and as an
 integrated whole, against any environment (local/QA/staging).
+air-model-gateway is the service formerly called air-llm. Its display name
+and `ServiceKind` literal say `air-model-gateway`, but identifier-shaped
+names users already depend on keep `llm`: the `/api/llm` proxy route, the
+`src/components/llm/` directory and `LlmTab` component, and the
+`AIR_WEB__TARGETS__<NAME>__LLM_*` env keys. Renaming those would break every
+existing `.env.local`. The tab's *label* is "Model Gateway".
 
 It is meant as a **reference BFF pattern** web developers can extend: an
 independent web client authenticating to an API gateway that alone holds
 upstream configuration and credentials — the shape a real production
 integration should follow. That framing (see "The BFF is the trust
 boundary" below) is the most important thing to preserve when touching this
-code. **The repo directory is still named `air-web` on disk** (a rename to
-`air-web-console` at the filesystem/repo level is a separate, deliberate
-step taken outside this codebase) — in-repo identity (`package.json`,
-storage-key prefixes, this file) already says `air-web-console`.
+code.
 
 ## Commands
 
@@ -41,6 +44,21 @@ make check           # or: npm run lint && npm run typecheck && npm run test
 npx vitest           # vitest watch mode
 npx vitest run path/to/file.test.ts   # a single test file
 ```
+
+`make dev` also runs `npm install` and `make env` first. CI
+(`.github/workflows/ci.yml`) runs `make check` + `npm run build` + a Docker
+build, so `make check` alone doesn't catch build-only failures.
+
+**Configuration** is all `AIR_WEB__`-prefixed env vars, parsed by
+`src/lib/config.ts`'s `loadDefaults()`. Targets are discovered dynamically:
+any `AIR_WEB__TARGETS__<NAME>__<FIELD>` defines target `<name>` (fields:
+`LABEL`, `{CLASSIFIER,ORCHESTRATOR,LLM}_BASE_URL`, `CLASSIFIER_API_KEY`,
+`ORCHESTRATOR_{CUSTOMER,BUSINESS}_API_KEY`, `LLM_API_KEY`, `VERIFY_TLS`) —
+adding an environment is an `.env.local` edit plus a restart, never a code
+change. `local` always exists via built-in defaults. air-orchestrator-service's
+channel is determined by *which key* is sent (customer key → `/v1/chat`,
+business key → `/v1/query`; the wrong one is a 403), which is why
+`X-Target-Channel` exists — it selects the key server-side.
 
 `make help` lists every target. There is no `.env` in this repo — `make env`
 (or `cp .env.example .env.local`) creates one before first run. Both the
@@ -124,7 +142,8 @@ response pane is built from; `DashboardGrid`
 response *summary* is built from — extend a summary by adding rows to a
 `DashboardGrid`, not by inventing a new layout.
 
-**air-orchestrator-service's SSE stream is collected, not piped live.** When a caller
+**SSE streams are collected, not piped live** (air-orchestrator-service's
+turn stream and air-model-gateway's `/v1/generate` with `stream: true`). When a caller
 asks for the stream transport, `forwardStreamRequest` performs the real SSE
 request (`Accept: text/event-stream`, `event:`/`data:` frame parsing) but
 waits for the stream to close and returns one `Exchange` with all frames in
@@ -133,7 +152,15 @@ stream would actually benefit from, so collecting once and rendering once
 is simpler than building that plumbing for no payoff. Client-side,
 `src/components/orchestrator/events.ts`'s `foldEvents` reassembles those events
 into the same shape a non-streamed `TurnResult` already has, so
-`TurnSummary` renders either identically.
+`TurnSummary` renders either identically; `src/components/llm/stream.ts`'s
+`foldStream` does the same for the gateway (`start`/`delta`/`done`/`error`
+into a `GenerateOutput`). Two details keep the collected form honest: each
+frame carries `received_ms` (when the BFF read it), so time-to-first-token
+and proxy buffering stay visible without live rendering; and a response
+that isn't `text/event-stream` (a 4xx/5xx before the stream started) is
+parsed as JSON into `responseJson`, not as frames. Upstream keys never ride
+back in an `Exchange`: `serviceProxy.ts` masks `requestHeaders` server-side
+before returning it, so there is no client-side "reveal" for them.
 
 **Options editors implement tick-to-omit semantics deliberately.** The AIR
 services' request schemas set `additionalProperties: false` and, for
@@ -168,8 +195,16 @@ theme preference persist across a reload (`localStorage`, via Zustand's
 `persist` middleware); the selected target and timeout persist
 per-tab-session via `sessionStorage`; the LLM tab has a real multi-turn
 conversation builder (`src/components/llm/ChatFields.tsx`) alongside the
-raw-JSON "Advanced" mode, since air-llm is stateless per call and a
-hand-written transcript is easy to get wrong; Vitest + a GitHub Actions CI
+raw-JSON "Advanced" mode, since air-model-gateway is stateless per call and a
+hand-written transcript is easy to get wrong; the Model Gateway tab's
+contract scenarios (`src/components/llm/data.ts`) carry per-environment
+expectations, because the gateway's policy is deliberately different
+outside `local` (this console's key holds `generate`, `admin_read` and
+`pin` there, not `embed`), and a "known gaps" group that asserts what the
+gateway's contract promises and fails until the matching gateway fix lands
+— move a row out of that group once it passes. What each class means is
+read live from the gateway's `GET /v1/capabilities`, never mirrored from
+its `deploy/routing.yaml` by hand; Vitest + a GitHub Actions CI
 workflow (`.github/workflows/ci.yml`) run lint/typecheck/test/build/Docker
 build on every push and PR.
 
@@ -195,9 +230,10 @@ build on every push and PR.
   component.
 - `src/lib/config.ts`'s `LOCAL_TARGET_DEV_DEFAULTS.llmApiKey` (value:
   `"air-client-dev"`) looks like a stray reference to a different project —
-  it isn't one to remove. That exact string is the caller identity air-llm's
-  own local `.env.example` provisions a service token for; changing it here
-  would break authentication against a real local air-llm checkout. See the
+  it isn't one to remove. That exact token string is what air-model-gateway's
+  own local `.env.example` maps to the `air-web-console` service identity;
+  changing it here would break authentication against a real local
+  air-model-gateway checkout. See the
   docstring on `LOCAL_TARGET_DEV_DEFAULTS` itself for why this whole object
   — despite holding real credentials — never reaches the browser.
 - `npm run typecheck` runs `next typegen` first, deliberately — `tsc` alone
@@ -209,7 +245,7 @@ build on every push and PR.
   checkout or in CI before anything else has run. Don't strip the
   `next typegen &&` back out of this script.
 - The Classifier tab has three modes (Single/Batch/Summary), not one route
-  per tab — matching the LLM tab's chat/embeddings precedent: a new route on
+  per tab — matching the Model Gateway tab's generate/embed precedent: a new route on
   an *existing* service's tab becomes another mode there, not a new
   top-level tab. `src/components/classifier/ClassifyItemsList.tsx` renders
   the `ClassifyBatchItem[]` shape shared by `/v1/classify/batch` and

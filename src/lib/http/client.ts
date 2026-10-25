@@ -18,7 +18,7 @@ import type { Exchange } from "@/lib/http/exchange";
 const ROUTE_PREFIX: Record<Connection["service"], string> = {
   "air-classifier-service": "/api/classifier",
   "air-orchestrator-service": "/api/orchestrator",
-  "air-llm": "/api/llm",
+  "air-model-gateway": "/api/llm",
 };
 
 export interface SendOptions {

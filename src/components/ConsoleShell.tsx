@@ -16,7 +16,7 @@ import { SystemTab } from "@/components/system/SystemTab";
 import { useConfig } from "@/hooks/useConfig";
 import { useConnections } from "@/store/connectionStore";
 
-const TAB_NAMES = ["Classifier", "Orchestrator", "LLM", "System"] as const;
+const TAB_NAMES = ["Classifier", "Orchestrator", "Model Gateway", "System"] as const;
 
 export function ConsoleShell() {
   const { hydrated } = useConfig();

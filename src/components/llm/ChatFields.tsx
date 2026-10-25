@@ -23,8 +23,8 @@ export interface ChatMessage {
 type Mode = "single" | "conversation" | "advanced";
 
 /**
- * air-llm's `messages` field, with a **Conversation builder** mode
- * alongside the raw-JSON "Advanced" one. air-llm keeps no conversation
+ * air-model-gateway's `messages` field, with a **Conversation builder** mode
+ * alongside the raw-JSON "Advanced" one. air-model-gateway keeps no conversation
  * state of its own (no `session_id`), so a genuine multi-turn exchange
  * means resending the whole transcript every call; hand-pasting that JSON
  * is functional but not friendly, so this mode builds the same array by
@@ -92,7 +92,7 @@ export function ChatFields({ onChange }: { onChange: (messages: ChatMessage[], e
       {mode === "conversation" && (
         <Box>
           <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-            air-llm keeps no conversation state — there is no session id — so the whole transcript
+            air-model-gateway keeps no conversation state — there is no session id — so the whole transcript
             below is resent on every call.
           </Typography>
           {conversation.map((message, index) => (

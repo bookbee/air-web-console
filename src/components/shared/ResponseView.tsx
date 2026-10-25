@@ -4,8 +4,6 @@ import DownloadIcon from "@mui/icons-material/Download";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -37,6 +35,8 @@ import { JsonViewer } from "./JsonViewer";
 
 interface ProblemDetail {
   title?: string;
+  /** RFC 9457 extension the AIR services use as their stable, branchable id. */
+  code?: string;
   detail?: string;
   errors?: { field?: string; message?: string; code?: string }[];
 }
@@ -126,6 +126,7 @@ function ProblemDetailView({ payload }: { payload: ProblemDetail }) {
     <Box sx={{ mb: 1.5 }}>
       <Alert severity="error">
         <b>{payload.title}</b>
+        {payload.code ? <> · <code>{payload.code}</code></> : null}
         {payload.detail ? <><br />{payload.detail}</> : null}
       </Alert>
       {payload.errors && payload.errors.length > 0 && (
@@ -191,7 +192,6 @@ export function ResponseView({
   summary?: (payload: unknown, exchange: Exchange) => React.ReactNode;
 }) {
   const [tab, setTab] = useState(0);
-  const [reveal, setReveal] = useState(false);
 
   const hasSummaryContent =
     Boolean(summary) && exchangeOk(exchange) && (exchange.responseJson !== null || (exchange.isStream && exchange.events.length > 0));
@@ -206,7 +206,7 @@ export function ResponseView({
           <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", mb: 0.5 }}>
             Request that failed
           </Typography>
-          <JsonViewer value={toCurl(exchange, false)} />
+          <JsonViewer value={toCurl(exchange)} />
         </Box>
       </Box>
     );
@@ -262,12 +262,8 @@ export function ResponseView({
 
       {tabNames[tab] === "Request" && (
         <Box>
-          <FormControlLabel
-            control={<Checkbox checked={reveal} onChange={(event) => setReveal(event.target.checked)} />}
-            label="Reveal API key"
-          />
           <Box sx={{ position: "relative" }}>
-            <JsonViewer value={toCurl(exchange, reveal)} />
+            <JsonViewer value={toCurl(exchange)} />
           </Box>
           {exchange.requestBody !== null && exchange.requestBody !== undefined && (
             <Box sx={{ mt: 1.5 }}>

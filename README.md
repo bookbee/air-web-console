@@ -5,7 +5,7 @@
 prefixes — all three names refer to the same project)*
 
 A Next.js console for hand-testing, integrating with, and evaluating the
-AIR platform services — **air-classifier-service**, **air-orchestrator-service**, **air-llm** —
+AIR platform services — **air-classifier-service**, **air-orchestrator-service**, **air-model-gateway** —
 individually and as an integrated whole. Send a request, read the decoded
 response, copy the cURL that reproduces it exactly.
 
@@ -22,7 +22,7 @@ Four tabs, one per surface:
 | --- | --- | --- |
 | **Classifier** | air-classifier-service | `/v1/classify` (single, batch, tier probes) and `/v1/summary/refresh` (stateless customer-summary rollup) |
 | **Orchestrator** | air-orchestrator-service | Both channels: `/v1/chat` and `/v1/query`, including SSE turns |
-| **LLM** | air-llm | `/v1/inference` — chat and embeddings, one endpoint |
+| **Model Gateway** | air-model-gateway | `/v1/generate` (text, structured, streamed) and `/v1/embed` |
 | **System** | all three | Health, readiness, capabilities, and a log of every call |
 
 ## Quickstart
@@ -35,7 +35,7 @@ make dev         # http://127.0.0.1:3000
 
 The demo gateway token and the `local` target both work as shipped — a
 fresh checkout needs no edits to run against sibling AIR services on their
-default ports (8081 air-orchestrator-service, 8082 air-classifier-service, 8083 air-llm).
+default ports (8081 air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway).
 
 ### Two ways to run it
 
@@ -107,7 +107,7 @@ Next.js Route Handlers (BFF) — src/app/api/**
    │  2. resolves {baseUrl, apiKey, verifyTls} from server-side .env,
    │     keyed by (service, target name[, channel]) — never from a client header
    ▼
-air-classifier-service / air-orchestrator-service / air-llm   (real X-API-Key attached here, server-side only)
+air-classifier-service / air-orchestrator-service / air-model-gateway   (real X-API-Key attached here, server-side only)
 ```
 
 - **The browser never holds, sends, or receives an upstream API key.**
@@ -154,7 +154,7 @@ src/
     api/
       classifier/[...path]/route.ts     proxy to air-classifier-service
       orchestrator/[...path]/route.ts   proxy to air-orchestrator-service (JSON + SSE)
-      llm/[...path]/route.ts            proxy to air-llm
+      llm/[...path]/route.ts            proxy to air-model-gateway
       config/route.ts                 redacted target catalogue, shipped to the client
       health/route.ts                 ungated liveness probe (Docker HEALTHCHECK)
       _lib/serviceProxy.ts            the shared, gateway-token-gated handler behind all three
@@ -188,7 +188,7 @@ src/
 - The server-side timeout a client requests is clamped to `[1, 120]`
   seconds regardless of what's asked for — a request header influences
   behavior, but never past a server-owned bound.
-- The LLM tab's chat mode includes a **Conversation builder**: air-llm is
+- The Model Gateway tab's generate mode includes a **Conversation builder**: air-model-gateway is
   stateless per call (no `session_id`), so a genuine multi-turn exchange
   means resending the whole transcript every time — this mode builds that
   array by appending messages in the UI instead of hand-writing JSON.

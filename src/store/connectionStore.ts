@@ -126,7 +126,7 @@ export function buildConnections(state: ConnectionFieldsSlice): Connections {
     },
     llm: {
       ...base,
-      service: "air-llm",
+      service: "air-model-gateway",
       baseUrl: target?.llmBaseUrl ?? "",
       authenticated: target?.llmKeyed ?? false,
     },

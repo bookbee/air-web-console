@@ -34,18 +34,19 @@ export const LOCAL_TARGET_NAME = "local";
  * client-held state**: nothing in this object ever reaches the browser.
  * The React app (everything under `src/components`) never sees, holds, or
  * sends any of these — only this Node.js server does, when it calls out to
- * air-classifier-service/air-orchestrator-service/air-llm on the browser's behalf. That's the
+ * air-classifier-service/air-orchestrator-service/air-model-gateway on the browser's behalf. That's the
  * whole point of the BFF: the "web client" is dumb by design, and a
  * backend process (this one) is what actually holds credentials, exactly
  * like any server calling another server would.
  *
  * The base URLs are the AIR port map (air-infra/README.md): 8081
- * air-orchestrator-service, 8082 air-classifier-service, 8083 air-llm. The keys are the
+ * air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway. The keys are the
  * literal development tokens the sibling air-* services' own
  * `.env.example` files provision for local development — kept
  * byte-for-byte so a fresh checkout authenticates with zero edits on
- * either side. air-llm's own token config identifies this caller as
- * `"air-client-dev"` specifically; that literal string is fixed by that
+ * either side. `"air-client-dev"` is the token string air-model-gateway's own
+ * `.env.example` maps to the `air-web-console` service identity
+ * (`AIR_MODEL_GATEWAY_SECURITY__SERVICE_TOKENS`); the string is fixed by that
  * service's local config, not a naming choice made here.
  */
 const LOCAL_TARGET_DEV_DEFAULTS = {
@@ -60,7 +61,7 @@ const LOCAL_TARGET_DEV_DEFAULTS = {
 
 export const DEFAULT_USD_TO_INR_RATE = 87.0;
 
-export type ServiceKind = "air-classifier-service" | "air-orchestrator-service" | "air-llm";
+export type ServiceKind = "air-classifier-service" | "air-orchestrator-service" | "air-model-gateway";
 export type OrchestratorChannel = "customer" | "business";
 
 export interface ResolvedService {
@@ -97,7 +98,7 @@ export function resolveService(
   if (service === "air-classifier-service") {
     return { baseUrl: target.classifierBaseUrl, apiKey: target.classifierApiKey, verifyTls: target.verifyTls };
   }
-  if (service === "air-llm") {
+  if (service === "air-model-gateway") {
     return { baseUrl: target.llmBaseUrl, apiKey: target.llmApiKey, verifyTls: target.verifyTls };
   }
   return {

@@ -25,7 +25,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { assertGatewayAuthorized } from "@/lib/auth/gatewayAuth";
 import { loadDefaults, resolveService, type OrchestratorChannel, type ServiceKind } from "@/lib/config";
-import type { Exchange } from "@/lib/http/exchange";
+import { displayHeaders, type Exchange } from "@/lib/http/exchange";
 import { forwardRequest, forwardStreamRequest } from "@/lib/http/proxy";
 
 const MIN_TIMEOUT_SECONDS = 1;
@@ -109,5 +109,8 @@ export async function handleServiceProxy(
     body,
   });
 
-  return NextResponse.json(exchange);
+  // The upstream key was needed to make the call; it must not ride back to
+  // the browser inside the Exchange. Masked here, server-side, not left to
+  // the response pane's display helpers.
+  return NextResponse.json({ ...exchange, requestHeaders: displayHeaders(exchange.requestHeaders) });
 }

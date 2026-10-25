@@ -40,7 +40,7 @@ export function SystemTab({
 
       <Divider sx={{ my: 3 }} />
 
-      <SectionTitle>air-llm</SectionTitle>
+      <SectionTitle>air-model-gateway</SectionTitle>
       <ProbePanel connection={llm} slot="system-llm" />
 
       <Divider sx={{ my: 3 }} />

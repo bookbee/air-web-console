@@ -28,7 +28,7 @@ export type SourceType = (typeof SOURCE_TYPES)[number];
  * sends back as the next call's `existing_summary`. Loading it alongside
  * fresh items demonstrates the actual round trip (old narrative + new
  * items → refreshed narrative), and gives developers a concrete narrative
- * to look at even when air-llm's summary model isn't reachable — in that
+ * to look at even when air-model-gateway's summary model isn't reachable — in that
  * case the response carries this text over unchanged instead of showing an
  * empty string. */
 export const SUMMARY_EXAMPLE = {

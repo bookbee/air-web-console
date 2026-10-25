@@ -200,7 +200,7 @@ export function TargetBar({
       const candidates: [string, Connection][] = [
         ["air-classifier-service", classifier],
         ["air-orchestrator-service", orchestratorChat],
-        ["air-llm", llm],
+        ["air-model-gateway", llm],
       ];
       const toProbe = candidates.filter(([, connection]) => connection.baseUrl.trim());
       const entries = await Promise.all(
@@ -254,7 +254,7 @@ export function TargetBar({
           ]}
           result={results["air-orchestrator-service"]}
         />
-        <ServiceTargetRow label="air-llm" connection={llm} result={results["air-llm"]} />
+        <ServiceTargetRow label="air-model-gateway" connection={llm} result={results["air-model-gateway"]} />
       </Box>
       <Button
         variant="outlined"

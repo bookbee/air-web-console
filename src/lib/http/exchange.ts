@@ -17,6 +17,9 @@ export const MASK = "••••••••";
 
 export interface SseEvent {
   event?: string;
+  /** When the BFF received this frame, in ms since the request started.
+   * Added by the proxy, not part of the wire event. */
+  received_ms?: number;
   [key: string]: unknown;
 }
 

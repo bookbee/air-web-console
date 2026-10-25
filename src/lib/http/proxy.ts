@@ -145,6 +145,34 @@ function parseSseFrames(raw: string): SseEvent[] {
   return events;
 }
 
+/** Read an SSE body chunk by chunk, stamping each complete frame with the
+ * milliseconds since the request started. Still collected into one
+ * Exchange, but the stamps keep what a live view would have shown: time to
+ * first token, and whether anything between here and the service buffered
+ * the stream (every frame arriving at the same instant). */
+async function readSseEvents(body: AsyncIterable<Uint8Array> | null, started: number): Promise<SseEvent[]> {
+  if (!body) return [];
+  const events: SseEvent[] = [];
+  const decoder = new TextDecoder();
+  let buffer = "";
+  const take = (final: boolean) => {
+    buffer = buffer.replace(/\r\n/g, "\n");
+    const blocks = buffer.split("\n\n");
+    buffer = final ? "" : (blocks.pop() ?? "");
+    const at = Math.round(performance.now() - started);
+    for (const block of blocks) {
+      for (const event of parseSseFrames(`${block}\n\n`)) events.push({ ...event, received_ms: at });
+    }
+  };
+  for await (const chunk of body) {
+    buffer += decoder.decode(chunk, { stream: true });
+    take(false);
+  }
+  buffer += decoder.decode();
+  take(true);
+  return events;
+}
+
 /** Perform the call as a real SSE request and collect every frame into one
  * Exchange once the stream closes. Collected rather than piped live to the
  * browser: this exercises the real wire mechanics (the Accept header, one
@@ -183,11 +211,24 @@ export async function forwardStreamRequest(options: ForwardOptions): Promise<Exc
     response.headers.forEach((value, name) => {
       exchange.responseHeaders[name] = value;
     });
-    const raw = await response.text();
+    // A service that fails before the stream starts (auth, policy,
+    // validation, every rung down) answers an ordinary problem+json body,
+    // not SSE. Parsing that as frames would drop it on the floor.
+    if (!(response.headers.get("content-type") ?? "").includes("text/event-stream")) {
+      const raw = await response.text();
+      exchange.elapsedMs = performance.now() - started;
+      exchange.responseText = raw;
+      try {
+        exchange.responseJson = raw ? JSON.parse(raw) : null;
+      } catch {
+        exchange.responseJson = null;
+      }
+      return exchange;
+    }
+    exchange.events = await readSseEvents(response.body, started);
     exchange.elapsedMs = performance.now() - started;
-    exchange.events = parseSseFrames(raw);
     exchange.responseText = exchange.events
-      .map((event) => `event: ${event.event}\ndata: ${JSON.stringify(event)}\n`)
+      .map((event) => `event: ${event.event}\ndata: ${JSON.stringify({ ...event, received_ms: undefined })}\n`)
       .join("\n");
   } catch (error) {
     exchange.elapsedMs = performance.now() - started;
