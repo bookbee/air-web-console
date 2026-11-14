@@ -59,6 +59,6 @@ T1 low-confidence → stop with `cost_ceiling`, `degraded: true`.
 
 ## Resolution
 
-**Origin:** fixed by CL-001's change, air-classifier-service uncommitted on top of `d151e5c` (branch `feature/model-gateway-rename`; container rebuilt ~10:30 local). Tests: `test_policy.py::test_rule3_a_zero_ceiling_still_reaches_a_free_rung`, `test_orchestrator.py::test_a_zero_ceiling_still_runs_the_free_rungs`.
+**Origin:** fixed by CL-001's change, air-classifier-service `8f258fc` on `fix/sit-2026-11-14`, on top of `d151e5c` (container rebuilt ~10:30 local). Tests: `test_policy.py::test_rule3_a_zero_ceiling_still_reaches_a_free_rung`, `test_orchestrator.py::test_a_zero_ceiling_still_runs_the_free_rungs`.
 
 **Verifier (2026-11-14 ~05:10 UTC):** repro → 200 `t1_classifier`. **Passed.**

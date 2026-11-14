@@ -58,6 +58,6 @@ An outage case (T3 forced, gateway unreachable) still returns a retryable 503.
 
 ## Resolution
 
-**Origin:** fixed, air-classifier-service uncommitted on top of `d151e5c` (branch `feature/model-gateway-rename`; container rebuilt ~10:30 local). A limit-caused empty ladder → 422 `no-verdict-within-limits`, `retryable: false`, naming the option. 503 `no-verdict` kept for real failures, `retryable: true`, now also in batch items (was false). Golden `t0-no-match` and `demo-tiers.sh` T0-e now expect 422.
+**Origin:** fixed, air-classifier-service `8f258fc` on `fix/sit-2026-11-14`, on top of `d151e5c` (container rebuilt ~10:30 local). A limit-caused empty ladder → 422 `no-verdict-within-limits`, `retryable: false`, naming the option. 503 `no-verdict` kept for real failures, `retryable: true`, now also in batch items (was false). Golden `t0-no-match` and `demo-tiers.sh` T0-e now expect 422.
 
 **Verifier (2026-11-14 ~05:10 UTC):** `max_tier: t0_rules` → 422 `no-verdict-within-limits`, `retryable: false`. **Passed.**
