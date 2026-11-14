@@ -15,7 +15,11 @@
 
 import { locationOf, type Location } from "./location";
 
-export type ServiceName = "air-classifier-service" | "air-orchestrator-service" | "air-model-gateway";
+export type ServiceName =
+  | "air-classifier-service"
+  | "air-orchestrator-service"
+  | "air-model-gateway"
+  | "air-rag-service";
 
 export interface Connection {
   service: ServiceName;

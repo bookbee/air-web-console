@@ -12,7 +12,7 @@ import { DataTable } from "@/components/shared/DataTable";
 
 /**
  * Health/readiness/capabilities summaries — ported from `tabs/system.py`.
- * air-classifier-service, air-orchestrator-service and air-model-gateway each answer `/v1/capabilities`
+ * air-classifier-service, air-orchestrator-service, air-model-gateway and air-rag-service each answer `/v1/capabilities`
  * and `/v1/ready` with a different shape, so these renderers follow
  * whichever fields the payload actually has rather than one service's
  * schema, exactly like the Python version.
@@ -36,7 +36,7 @@ function detailText(value: unknown): string {
 function Facts({ payload }: { payload: Record<string, unknown> }) {
   const present = [
     ...HEADLINE_KEYS.filter((key) => key in payload).map((key) => [key, payload[key]] as const),
-    ...["max_batch_items", "max_text_chars"].filter((key) => key in payload).map((key) => [key, payload[key]] as const),
+    ...["max_batch_items", "max_text_chars", "tenant", "vector_store_backend", "document_count"].filter((key) => key in payload).map((key) => [key, payload[key]] as const),
   ];
   if (present.length === 0) return null;
   return (
@@ -112,6 +112,9 @@ export function CapabilitiesSummary({ payload }: { payload: unknown }) {
     ...HEADLINE_KEYS,
     "max_batch_items",
     "max_text_chars",
+    "tenant",
+    "vector_store_backend",
+    "document_count",
     "tiers",
     "supported_languages",
     "providers",
@@ -200,9 +203,11 @@ export function ReadinessSummary({ payload }: { payload: unknown }) {
   // air-model-gateway reports Redis only when it's configured, and never
   // lets it gate readiness — a "no" here means degraded caching, not down.
   if ("redis" in body) facts.push(["Redis", body.redis ? "up" : "down (not gating)"]);
-  for (const key of ["service", "version", "checked_at"]) {
+  for (const key of ["service", "version", "checked_at", "document_count"]) {
     if (key in body) facts.push([key.replace(/_/g, " "), String(body[key])]);
   }
+  // air-rag-service: an empty index is still ready, but says so here.
+  const warnings = Array.isArray(body.warnings) ? body.warnings.map(String) : [];
 
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
@@ -218,6 +223,12 @@ export function ReadinessSummary({ payload }: { payload: unknown }) {
           ))}
         </Grid>
       )}
+
+      {warnings.map((warning) => (
+        <Alert key={warning} severity="warning" sx={{ mb: 1.5 }}>
+          {warning}
+        </Alert>
+      ))}
 
       <ProviderMapBlock payload={body} meaning="reachable" />
 

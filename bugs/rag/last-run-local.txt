@@ -1,0 +1,68 @@
+air-rag-service contract + SIT run · 2026-11-14T13:52:49.740Z
+console http://host.docker.internal:3001 · target local · rag http://host.docker.internal:8097 · direct http://host.docker.internal:8097
+health {"status":"ok","service":"air-rag-service","version":"0.1.0"} · tenant brightcart · index 29 chunks
+query set matches ../air-rag-service/sit/queries.json
+
+
+PASS    health           health                       bff    [200]
+PASS    health           ready                        bff    [200]
+PASS    health           capabilities                 bff    [200]
+PASS    contract edges   request-id-echo              bff    [422]
+PASS    contract edges   404-problem                  bff    [404]
+PASS    contract edges   405-problem                  bff    [405]
+PASS    contract edges   retrieve-shape               bff    [200]
+PASS    rejections       tenant-in-body               bff    [422]
+PASS    rejections       top-k-0                      bff    [422]
+PASS    rejections       top-k-51                     bff    [422]
+PASS    rejections       query-empty                  bff    [422]
+PASS    rejections       query-4001                   bff    [422]
+PASS    rejections       query-missing                bff    [422]
+PASS    rejections       unknown-field                bff    [422]
+PASS    headless         health-no-key                direct [200]
+PASS    headless         no-key                       direct [401]
+PASS    headless         bad-key                      direct [401]
+PASS    headless         capabilities-no-key          direct [401]
+PASS    headless         malformed-json               direct [422]
+PASS    headless         request-id-invalid           direct [200]
+SKIP    headless         scope-capabilities           set RAG_SCOPED_KEY to a retrieval:read-only key
+MANUAL  operator         gateway-down-health          RAG_OPERATOR=gateway-down, after: Stop air-model-gateway first (cd ../air-model-gateway && make down).
+MANUAL  operator         gateway-down-ready           RAG_OPERATOR=gateway-down, after: Stop air-model-gateway first (cd ../air-model-gateway && make down).
+MANUAL  operator         gateway-down-retrieve        RAG_OPERATOR=gateway-down, after: Stop air-model-gateway first (cd ../air-model-gateway && make down).
+PASS    retrieval (SIT)  sit-01                       bff    [200]
+PASS    retrieval (SIT)  sit-02                       bff    [200]
+PASS    retrieval (SIT)  sit-03                       bff    [200]
+PASS    retrieval (SIT)  sit-04                       bff    [200]
+PASS    retrieval (SIT)  sit-05                       bff    [200]
+PASS    retrieval (SIT)  sit-06                       bff    [200]
+PASS    retrieval (SIT)  sit-07                       bff    [200]
+PASS    retrieval (SIT)  sit-08                       bff    [200]
+PASS    retrieval (SIT)  sit-09                       bff    [200]
+PASS    retrieval (SIT)  sit-10                       bff    [200]
+PASS    retrieval (SIT)  sit-11                       bff    [200]
+PASS    retrieval (SIT)  sit-12                       bff    [200]
+PASS    retrieval (SIT)  sit-13                       bff    [200]
+PASS    retrieval (SIT)  sit-14                       bff    [200]
+PASS    retrieval (SIT)  sit-15                       bff    [200]
+PASS    retrieval (SIT)  sit-16                       bff    [200]
+PASS    retrieval (SIT)  sit-17                       bff    [200]
+PASS    retrieval (SIT)  sit-18                       bff    [200]
+PASS    retrieval (SIT)  sit-19                       bff    [200]
+PASS    retrieval (SIT)  sit-20                       bff    [200]
+PASS    retrieval (SIT)  sit-21                       bff    [200]
+PASS    retrieval (SIT)  sit-22                       bff    [200]
+PASS    retrieval (SIT)  sit-23                       bff    [200]
+PASS    retrieval (SIT)  sit-24                       bff    [200]
+PASS    retrieval (SIT)  sit-25                       bff    [200]
+PASS    retrieval (SIT)  sit-26                       bff    [200]
+PASS    retrieval (SIT)  sit-27                       bff    [200]
+PASS    retrieval (SIT)  sit-28                       bff    [200]
+PASS    retrieval (SIT)  sit-29                       bff    [200]
+PASS    retrieval (SIT)  archived-never-cited         bff    [200]
+OPEN    known gaps       gap-malformed-400            direct [422] RG-001 got 422 validation-error
+OPEN    known gaps       gap-malformed-before-auth    direct [422] RG-001 got 422 validation-error
+OPEN    known gaps       gap-top-k-bool               bff    [200] RG-002 got 200
+OPEN    known gaps       gap-top-k-string             bff    [200] RG-002 got 200
+OPEN    known gaps       gap-blank-query              bff    [200] RG-003 got 200
+OPEN    known gaps       gap-user-id-bounded          bff    [200] RG-003 got 200
+
+contract 50/50 passed · known gaps open 6
