@@ -7,7 +7,7 @@ SIT (2026-11-14). Process, statuses and severities are in [../README.md](../READ
 |---|---|
 | **Build tested** | air-rag-service @ `f5f2882`, container `air-rag-service:local` on `:8087` (unseeded), plus a seeded copy of the same image on `:8097` (`SEED_DIR=/app/sit/corpus`, 29 chunks) and an unseeded copy on `:8098` pointed at a dead gateway |
 | **Dependencies** | air-model-gateway @ `1fa80de` on `:8083` (embed model reachable) |
-| **Last run** | [last-run-local.txt](last-run-local.txt): contract 50/50 (all 29 SIT cases, isolation on every retrieve), operator rows 3/3 against the dead-gateway copy, 6 known gaps open |
+| **Last run** | [last-run-local.txt](last-run-local.txt): contract 50/50 against `:8087` itself, re-created seeded (integrated pass 2); operator rows 3/3 against the dead-gateway copy; 6 known gaps open |
 | **Reference** | `../air-rag-service/scripts/sit_check.py` against the seeded copy: 29/29 |
 
 ## Index

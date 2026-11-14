@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | open: **owner decision** (configuration, not code) |
+| **Status** | fixed `0ba546c` (branch `fix/restore-routing-order`, pushed) · verified in code, **not yet deployed** |
 | **Severity** | Medium |
 | **Service** | air-model-gateway @ `1fa80de` ("Minor updates", `deploy/routing.yaml` only) |
 | **Found** | 2026-11-14, code reading and the gateway's own test suite (SIT) |
@@ -68,4 +68,14 @@ rung matches its comment.
 
 ## Resolution
 
-_Filled in by the origin._
+**Origin:** reverted in `0ba546c` ("Restore routing order: Gemini first in
+cloud chains, local first in auto") on `fix/restore-routing-order`.
+
+**Verifier (2026-11-14, integrated pass 2):** at `0ba546c`, `auto` is
+`ollama:llama3.2:3b → gemini → anthropic → openai` (no duplicate rung, first
+rung matches its comment) and the gateway suite passes, 360/360, including
+both tests that failed at `1fa80de`. **Not verified live:** the running
+gateway still reports revision `fc741714427b`, and a default `/v1/generate`
+was served by `anthropic:claude-haiku-4-5`. Close as `verified` after the
+gateway is rebuilt from a build containing `0ba546c` and a default call is
+served by Ollama.

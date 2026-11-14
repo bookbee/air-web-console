@@ -1,6 +1,6 @@
-air-model-gateway contract run · 2026-11-14T05:17:50.622Z
-console http://host.docker.internal:3000 · target local · gateway http://host.docker.internal:8083
-gateway reports environment local · health {"status":"ok","version":"0.1.0","revision":"1fa80dea1597-dirty"}
+air-model-gateway contract run · 2026-11-14T14:05:08.847Z
+console http://host.docker.internal:3001 · target local · gateway http://host.docker.internal:8083
+gateway reports environment local · health {"status":"ok","version":"0.1.0","revision":"fc741714427b"}
 
 PASS    happy path      health
 PASS    happy path      ready
@@ -8,18 +8,18 @@ PASS    happy path      request-id
 PASS    happy path      capabilities
 PASS    happy path      policy
 PASS    happy path      generate-default
-FAIL    happy path      generate-local                  got 502 provider_unavailable
+PASS    happy path      generate-local
 PASS    happy path      generate-cloud
 PASS    happy path      cloud-prefer-anthropic
-FAIL    happy path      pin-local                       got 502 provider_unavailable
-FAIL    happy path      cache-hit                       got 502 provider_unavailable
-FAIL    happy path      cache-off                       got 502 provider_unavailable
-FAIL    happy path      structured-local                got 502 provider_unavailable
-FAIL    happy path      embed-local                     got 502 provider_unavailable
-FAIL    streaming       stream-local                    got 502 provider_unavailable
-FAIL    streaming       stream-cache-hit                got 502 provider_unavailable
+PASS    happy path      pin-local
+PASS    happy path      cache-hit
+PASS    happy path      cache-off
+PASS    happy path      structured-local
+PASS    happy path      embed-local
+PASS    streaming       stream-local
+PASS    streaming       stream-cache-hit
 PASS    streaming       stream-error-before-start
-FAIL    contract edges  truncated                       got 502 provider_unavailable
+PASS    contract edges  truncated
 PASS    contract edges  anthropic-temperature
 PASS    rejections      unknown-field
 PASS    rejections      legacy-task
@@ -43,9 +43,9 @@ PASS    rejections      unpriced-pin                   MG-002
 PASS    contract edges  404-problem                    MG-003
 PASS    contract edges  capabilities-usable            MG-004
 PASS    contract edges  405-problem                    MG-003
-FAIL    rejections      pin-unknown-model              MG-005 got 502 provider_unavailable
+PASS    rejections      pin-unknown-model              MG-005
 PASS    rejections      embed-too-many                 MG-005
 PASS    rejections      too-many-messages              MG-005
 OPEN    known gaps      gap-gemini-thinking-cap        MG-011 got 502 provider_unavailable
 
-contract 33/44 passed · known gaps open 1
+contract 43/44 passed · known gaps open 1
