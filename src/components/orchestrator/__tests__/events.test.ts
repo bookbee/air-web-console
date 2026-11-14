@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { foldEvents } from "../events";
+import { foldEvents, isSessionNotFound } from "../events";
 
 describe("foldEvents", () => {
   it("reassembles a turn-lifecycle SSE stream into a TurnResult-shaped object", () => {
@@ -32,4 +32,17 @@ describe("foldEvents", () => {
     expect(folded.citations).toEqual([]);
     expect(folded.usage).toEqual({});
   });
+});
+
+describe("isSessionNotFound", () => {
+  it("recognises the orchestrator's session-not-found problem", () => {
+    expect(isSessionNotFound({ type: "https://air.dev/errors/session-not-found", status: 404 })).toBe(true);
+  });
+
+  it.each([null, "x", {}, { type: "https://air.dev/errors/not-found" }, { type: 404 }])(
+    "ignores %j",
+    (body) => {
+      expect(isSessionNotFound(body)).toBe(false);
+    },
+  );
 });

@@ -29,6 +29,8 @@ statuses and severities are in [../README.md](../README.md).
 | [MG-010](MG-010-no-build-identity.md) | Medium | verified | The gateway doesn't report which build it is, so a test run can't prove what it tested | none |
 | [MG-011](MG-011-gemini-thinking-eats-max-tokens.md) | Medium | verified | Gemini's thinking uses up `max_tokens`: capped answers are cut off and uncached, uncapped ones cost several times more | `gap-gemini-thinking-cap` |
 | [MG-012](MG-012-failover-path-not-reported.md) | Low | wont-fix (planned: gateway `00-plan.md` §6) | A response doesn't say which models were tried before the one that answered | none (shape is the origin's choice) |
+| [MG-013](MG-013-max-tokens-unbounded.md) | Medium | fixed `fc74171` (branch) · verified | `max_tokens` unbounded (retryable 502); structurally invalid conversations reach a paid provider | none yet (proposed `max-tokens-huge`) |
+| [MG-014](MG-014-auto-chain-no-longer-local-first.md) | Medium | open (owner decision) | `1fa80de` made `auto` cloud-only with a duplicate rung, contradicting its comment; 2 gateway tests fail at `HEAD` | none |
 
 ## Test setup
 

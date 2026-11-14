@@ -26,7 +26,7 @@ import { joinUrl, type Exchange } from "@/lib/http/exchange";
 import { parseJsonObject } from "@/lib/validators";
 
 import { ROUTES } from "./data";
-import { foldEvents } from "./events";
+import { foldEvents, isSessionNotFound } from "./events";
 import { OptionsEditor } from "./OptionsEditor";
 import { Transcript, type TranscriptTurn } from "./Transcript";
 import { TurnSummary } from "./TurnSummary";
@@ -77,6 +77,15 @@ export function OrchestratorTab({ chat, query }: { chat: Connection; query: Conn
   const url = joinUrl(connection.baseUrl || "https://—", route.path);
 
   const handleResult = (exchange: Exchange, sentText: string) => {
+    // air-orchestrator-service answers an unknown or expired session_id with a
+    // 404 (it used to start a fresh session silently; OR-004). The 404 stays in
+    // the response pane; the dead id and its transcript are dropped so the next
+    // send starts a new session instead of failing the same way again.
+    if (exchange.statusCode === 404 && isSessionNotFound(exchange.responseJson)) {
+      setSessionId("");
+      setTranscript([]);
+      return;
+    }
     if (exchange.error !== null || (exchange.statusCode ?? 0) >= 400) return;
     const result = resolvePayload(exchange);
     if (!result) return;

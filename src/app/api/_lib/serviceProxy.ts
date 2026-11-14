@@ -27,6 +27,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { assertGatewayAuthorized } from "@/lib/auth/gatewayAuth";
+import { upstreamPath } from "@/lib/http/upstreamPath";
 import { loadDefaults, resolveService, type OrchestratorChannel, type ServiceKind } from "@/lib/config";
 import { displayHeaders, type Exchange } from "@/lib/http/exchange";
 import {
@@ -132,7 +133,17 @@ export async function handleServiceProxy(
   const resolvedTargetName = targetName in defaults.targets ? targetName : defaults.selected;
   const { baseUrl, apiKey, verifyTls } = resolveService(defaults, resolvedTargetName, service, channel);
 
-  const path = `/${pathSegments.join("/")}`;
+  const safePath = upstreamPath(pathSegments);
+  if (safePath === null) {
+    return NextResponse.json(
+      emptyExchange(
+        request.method,
+        `/${pathSegments.join("/")}`,
+        "Refused: the path holds a dot-segment, an encoded separator or a control character.",
+      ),
+    );
+  }
+  const path = safePath;
   const search = request.nextUrl.search;
 
   if (!baseUrl) {
