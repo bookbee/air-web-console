@@ -8,7 +8,7 @@ Process, statuses and severities are in [../README.md](../README.md).
 |---|---|
 | **Build tested** | `air-classifier-service` @ `d151e5c`, container `air-classifier-service:local` on `:8082`, recreated 2026-11-13 17:18 UTC with `MODEL_GATEWAY__TOKEN` set |
 | **Dependencies** | air-model-gateway @ `1fa80de` on `:8083` (Ollama unreachable, Gemini key invalid, Anthropic OK); Redis from air-infrastructure-service |
-| **Fixes** | uncommitted on top of `d151e5c` (branch `feature/model-gateway-rename`), container rebuilt 2026-11-14, verified ~05:10 UTC |
+| **Fixes** | `8f258fc` on branch `fix/sit-2026-11-14` (on top of `d151e5c`), not pushed; container rebuilt 2026-11-14, verified ~05:10 UTC |
 | **Tier 1 backend** | lexicon fallback: `./models` is empty, `onnx_loaded: false` |
 
 ## Index

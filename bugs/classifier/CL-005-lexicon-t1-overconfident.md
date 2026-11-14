@@ -61,6 +61,6 @@ Add a golden-set case for sarcasm under the lexicon backend.
 
 ## Resolution
 
-**Origin:** fixed, air-classifier-service uncommitted on top of `d151e5c` (branch `feature/model-gateway-rename`; container rebuilt ~10:30 local). With no ONNX artifact, T1's confidence is held at floor − 0.01 (0.79) unless T0 committed to the same label. A lexicon-decided verdict carries `fallback` → `degraded`. Tests in `test_t1_classifier.py`, `test_ladder_wiring.py`.
+**Origin:** fixed, air-classifier-service `8f258fc` on `fix/sit-2026-11-14`, on top of `d151e5c` (container rebuilt ~10:30 local). With no ONNX artifact, T1's confidence is held at floor − 0.01 (0.79) unless T0 committed to the same label. A lexicon-decided verdict carries `fallback` → `degraded`. Tests in `test_t1_classifier.py`, `test_ladder_wiring.py`.
 
 **Verifier (2026-11-14 ~05:10 UTC):** sarcasm repro → T1 0.79 `low_confidence` → T3 `negative` 0.88. **Passed.** Side effect: on this lexicon-only deployment nearly every text now reaches T3 (about $0.004 each). Shipping the ONNX artifact into `./models` is what restores T1 as a cheap rung. See the regression note in CL-006.
