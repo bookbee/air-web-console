@@ -60,6 +60,6 @@ tests for both channels with a stub gateway that prices calls.
 
 ## Resolution
 
-**Origin:** fixed, air-orchestrator-service uncommitted on top of `ee242e1` (native `make run --reload`, reloaded 04:56:13Z). Spec 0008 (REQ-COST-001..004). Pre-call check on both channels with a conservative estimate (prompt chars/3 at $3/Mtok + full `max_tokens` at $15/Mtok, `TURN__ESTIMATE__*`). The effective ceiling is now `min(option, setting)`: before, a caller's option *replaced* the operator ceiling and so could raise it. Tests in `test_cost_ceiling.py`. Contract: a turn can be `degraded` with an empty `degraded` list because of cost.
+**Origin:** fixed, air-orchestrator-service `616709b` on branch `feature/model-gateway-migration` (on top of `ee242e1`; not pushed; byte-identical to the verified `--reload` tree, which was clean at commit time). Spec 0008 (REQ-COST-001..004). Pre-call check on both channels with a conservative estimate (prompt chars/3 at $3/Mtok + full `max_tokens` at $15/Mtok, `TURN__ESTIMATE__*`). The effective ceiling is now `min(option, setting)`: before, a caller's option *replaced* the operator ceiling and so could raise it. Tests in `test_cost_ceiling.py`. Contract: a turn can be `degraded` with an empty `degraded` list because of cost.
 
 **Verifier (2026-11-14 ~05:10 UTC):** repro → `status: degraded`, `model_calls: 0`, `cost_usd: 0.0`. **Passed.**

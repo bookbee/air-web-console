@@ -6,7 +6,7 @@ Process, statuses and severities are in [../README.md](../README.md).
 | | |
 |---|---|
 | **Build tested** | `air-orchestrator-service` @ `ee242e1` (clean), native `uvicorn --reload` on `:8081`, one worker |
-| **Fixes** | uncommitted on top of `ee242e1`, reloaded 04:56:13Z, verified ~05:10 UTC |
+| **Fixes** | branch `feature/model-gateway-migration`: `1bacfe5` (OR-001), `616709b` (OR-002, OR-003), `4f05811` (OR-004 part 1, OR-005 a/b/c/e); not pushed; verified ~05:10 UTC |
 | **Dependencies** | air-model-gateway @ `1fa80de`, air-classifier-service @ `d151e5c`, air-infrastructure-service on `:8080`; session and cache backends `memory` |
 
 ## Index

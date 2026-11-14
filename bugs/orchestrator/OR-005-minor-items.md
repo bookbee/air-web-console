@@ -31,6 +31,6 @@ CL-006b: an unauthenticated request with body `{bad` gets 422, not 401.
 
 ## Resolution
 
-**Origin:** air-orchestrator-service uncommitted on top of `ee242e1` (native `make run --reload`, reloaded 04:56:13Z), spec 0009. a fixed (blank → 422); b fixed (structural check of `type`/`properties`/`items`/`required`; a full metaschema check is a declared gap, REQ-VAL-007, pending adding the `jsonschema` dependency); c fixed (`min_length=1`); d wont-fix by design (spec 0005 REQ-CLS-010, Article III); e fixed (no valid key → 401 whatever the body). Contract: a, b and c were 200 and are now 422; `docs/openapi.json` regenerated.
+**Origin:** air-orchestrator-service `4f05811` on branch `feature/model-gateway-migration` (on top of `ee242e1`; not pushed; byte-identical to the verified `--reload` tree, which was clean at commit time), spec 0009. a fixed (blank → 422); b fixed (structural check of `type`/`properties`/`items`/`required`; a full metaschema check is a declared gap, REQ-VAL-007, pending adding the `jsonschema` dependency); c fixed (`min_length=1`); d wont-fix by design (spec 0005 REQ-CLS-010, Article III); e fixed (no valid key → 401 whatever the body). Contract: a, b and c were 200 and are now 422; `docs/openapi.json` regenerated.
 
 **Verifier (2026-11-14 ~05:10 UTC):** a 422, b 422 (names `output_schema.type`), c 422, e 401. **Passed.**
