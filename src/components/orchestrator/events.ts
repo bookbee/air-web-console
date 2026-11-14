@@ -99,3 +99,13 @@ export function eventDetail(event: SseEvent): string {
       return "";
   }
 }
+
+/** Whether a problem body is air-orchestrator-service's `session-not-found`:
+ * the answer to an unknown or expired `session_id` (GET, and since OR-004
+ * also `/v1/chat` and `/v1/query`). Matched on the problem `type`'s last
+ * segment, so a different error host or prefix doesn't matter. */
+export function isSessionNotFound(body: unknown): boolean {
+  if (typeof body !== "object" || body === null) return false;
+  const type = (body as Record<string, unknown>).type;
+  return typeof type === "string" && type.replace(/\/+$/, "").endsWith("/session-not-found");
+}

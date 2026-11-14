@@ -18,9 +18,9 @@ bugs/
     <ID>-<slug>.md        one report per bug
 ```
 
-Service folders: `model-gateway/` (air-model-gateway). Add
-`classifier/` (air-classifier-service) and `orchestrator/`
-(air-orchestrator-service) the same way when they have reports.
+Service folders: `model-gateway/` (air-model-gateway), `classifier/`
+(air-classifier-service) and `orchestrator/` (air-orchestrator-service).
+A cross-service test pass is written up as `SIT-<date>.md` at this level.
 
 ## IDs
 
