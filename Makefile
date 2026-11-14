@@ -6,7 +6,7 @@ IMAGE   ?= air-web-console
 TAG     ?= local
 
 .DEFAULT_GOAL := help
-.PHONY: help install env dev build start lint typecheck test check gateway-check image up down logs clean
+.PHONY: help install env dev build start lint typecheck test check gateway-check rag-check image up down logs clean
 
 help: ## Show this help
 	@echo "AIR Web Console (air-web-console) — make <target>"
@@ -47,7 +47,13 @@ GATEWAY_TARGET ?= local
 gateway-check: ## Run every Model Gateway contract scenario against a live gateway (console must be serving; GATEWAY_TARGET=local)
 	@set -a; . ./.env.local; set +a; \
 		CONSOLE_URL=http://$(HOST):$(PORT) GATEWAY_TARGET=$(GATEWAY_TARGET) \
-		npx vitest run --config tests/live/vitest.config.mts
+		npx vitest run --config tests/live/vitest.config.mts tests/live/gateway-check.live.test.ts
+
+RAG_TARGET ?= local
+rag-check: ## Run every RAG contract + SIT scenario against a live air-rag-service (console must be serving; RAG_TARGET=local)
+	@set -a; . ./.env.local; set +a; \
+		CONSOLE_URL=http://$(HOST):$(PORT) RAG_TARGET=$(RAG_TARGET) \
+		npx vitest run --config tests/live/vitest.config.mts tests/live/rag-check.live.test.ts
 
 image: env ## Build the runtime Docker image
 	$(COMPOSE) build

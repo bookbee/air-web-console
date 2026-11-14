@@ -11,16 +11,18 @@ import type { Connection } from "@/lib/connection";
 import { HistoryPanel } from "./HistoryPanel";
 import { ProbePanel } from "./ProbePanel";
 
-/** Health, readiness and capabilities for all three services — ported from
+/** Health, readiness and capabilities for every service — ported from
  * `tabs/system.py`. */
 export function SystemTab({
   classifier,
   llm,
+  rag,
   orchestratorChat,
   orchestratorQuery,
 }: {
   classifier: Connection;
   llm: Connection;
+  rag: Connection;
   orchestratorChat: Connection;
   orchestratorQuery: Connection;
 }) {
@@ -42,6 +44,11 @@ export function SystemTab({
 
       <SectionTitle>air-model-gateway</SectionTitle>
       <ProbePanel connection={llm} slot="system-llm" />
+
+      <Divider sx={{ my: 3 }} />
+
+      <SectionTitle>air-rag-service</SectionTitle>
+      <ProbePanel connection={rag} slot="system-rag" />
 
       <Divider sx={{ my: 3 }} />
 

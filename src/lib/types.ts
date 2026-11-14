@@ -19,6 +19,8 @@ export interface Target {
   orchestratorBusinessKey: string;
   llmBaseUrl: string;
   llmApiKey: string;
+  ragBaseUrl: string;
+  ragApiKey: string;
   /** Per-target TLS verification, server-only — never a client-supplied
    * per-request choice (that was an SSRF/MITM-adjacent footgun). */
   verifyTls: boolean;
@@ -42,6 +44,8 @@ export interface PublicTarget {
   orchestratorBusinessKeyed: boolean;
   llmBaseUrl: string;
   llmKeyed: boolean;
+  ragBaseUrl: string;
+  ragKeyed: boolean;
 }
 
 export interface PublicDefaults {

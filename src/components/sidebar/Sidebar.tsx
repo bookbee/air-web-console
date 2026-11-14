@@ -187,6 +187,16 @@ export function Sidebar() {
             air-model-gateway
           </Typography>
           <ServiceStatus label="Base URL" baseUrl={target.llmBaseUrl} keyed={target.llmKeyed} route="/v1/generate" />
+
+          <Divider sx={{ my: 2 }} />
+
+          <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+            air-rag-service
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+            Read-only retrieval. The tenant comes from the <b>key</b>; a request can&apos;t name one.
+          </Typography>
+          <ServiceStatus label="Base URL" baseUrl={target.ragBaseUrl} keyed={target.ragKeyed} route="/v1/retrieve" />
         </>
       ) : (
         <Typography variant="caption" color="error">

@@ -1,6 +1,6 @@
 /**
- * Shared handler behind the three catch-all proxy routes
- * (`/api/classifier/**`, `/api/orchestrator/**`, `/api/llm/**`). Each route.ts
+ * Shared handler behind the four catch-all proxy routes
+ * (`/api/classifier/**`, `/api/orchestrator/**`, `/api/llm/**`, `/api/rag/**`). Each route.ts
  * is a two-line wrapper around this — every tab's request goes through the
  * same one transport, whichever service it targets.
  *

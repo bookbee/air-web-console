@@ -11,12 +11,13 @@ import { Header } from "@/components/layout/Header";
 import { TargetBar } from "@/components/layout/TargetBar";
 import { LlmTab } from "@/components/llm/LlmTab";
 import { OrchestratorTab } from "@/components/orchestrator/OrchestratorTab";
+import { RagTab } from "@/components/rag/RagTab";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { SystemTab } from "@/components/system/SystemTab";
 import { useConfig } from "@/hooks/useConfig";
 import { useConnections } from "@/store/connectionStore";
 
-const TAB_NAMES = ["Classifier", "Orchestrator", "Model Gateway", "System"] as const;
+const TAB_NAMES = ["Classifier", "Orchestrator", "Model Gateway", "RAG", "System"] as const;
 
 export function ConsoleShell() {
   const { hydrated } = useConfig();
@@ -41,6 +42,7 @@ export function ConsoleShell() {
           orchestratorChat={connections.orchestratorChat}
           orchestratorQuery={connections.orchestratorQuery}
           llm={connections.llm}
+          rag={connections.rag}
         />
         <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
           {TAB_NAMES.map((name) => (
@@ -60,10 +62,14 @@ export function ConsoleShell() {
           {tab === 2 && <LlmTab connection={connections.llm} />}
         </Box>
         <Box role="tabpanel" hidden={tab !== 3}>
-          {tab === 3 && (
+          {tab === 3 && <RagTab connection={connections.rag} />}
+        </Box>
+        <Box role="tabpanel" hidden={tab !== 4}>
+          {tab === 4 && (
             <SystemTab
               classifier={connections.classifier}
               llm={connections.llm}
+              rag={connections.rag}
               orchestratorChat={connections.orchestratorChat}
               orchestratorQuery={connections.orchestratorQuery}
             />

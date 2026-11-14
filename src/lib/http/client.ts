@@ -20,6 +20,7 @@ const ROUTE_PREFIX: Record<Connection["service"], string> = {
   "air-classifier-service": "/api/classifier",
   "air-orchestrator-service": "/api/orchestrator",
   "air-model-gateway": "/api/llm",
+  "air-rag-service": "/api/rag",
 };
 
 export interface SendOptions {

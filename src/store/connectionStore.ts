@@ -84,13 +84,14 @@ export interface Connections {
   orchestratorChat: Connection;
   orchestratorQuery: Connection;
   llm: Connection;
+  rag: Connection;
 }
 
 type ConnectionFieldsSlice = Pick<ConnectionState, "targets" | "selectedTarget" | "timeoutSeconds">;
 
 /** The four Connection objects every tab and the target bar read from —
  * classifier, orchestrator (chat route/customer channel), orchestrator
- * (query route/business channel), llm. A pure function of the store's
+ * (query route/business channel), llm, rag. A pure function of the store's
  * primitive fields, not itself a Zustand selector (see `useConnections`
  * below for the memoized hook every component should actually use — a raw
  * `useConnectionStore(buildConnections)` would allocate a new object every
@@ -129,6 +130,12 @@ export function buildConnections(state: ConnectionFieldsSlice): Connections {
       service: "air-model-gateway",
       baseUrl: target?.llmBaseUrl ?? "",
       authenticated: target?.llmKeyed ?? false,
+    },
+    rag: {
+      ...base,
+      service: "air-rag-service",
+      baseUrl: target?.ragBaseUrl ?? "",
+      authenticated: target?.ragKeyed ?? false,
     },
   };
 }

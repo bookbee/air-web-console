@@ -14,12 +14,13 @@ bugs/
   <service>/
     README.md             index for that service: status table, test setup
     READINESS.md          the release/handover gate and where it stands
-    last-run-<target>.txt the latest headless scenario run (make gateway-check)
+    last-run-<target>.txt the latest headless scenario run (make gateway-check, make rag-check)
     <ID>-<slug>.md        one report per bug
 ```
 
 Service folders: `model-gateway/` (air-model-gateway), `classifier/`
-(air-classifier-service) and `orchestrator/` (air-orchestrator-service).
+(air-classifier-service), `orchestrator/` (air-orchestrator-service) and
+`rag/` (air-rag-service).
 A cross-service test pass is written up as `SIT-<date>.md` at this level.
 
 ## IDs
@@ -32,6 +33,7 @@ closed as a duplicate or won't-fix.
 | air-model-gateway | `MG` |
 | air-classifier-service | `CL` |
 | air-orchestrator-service | `OR` |
+| air-rag-service | `RG` |
 
 The file name is the ID plus a short kebab-case slug, e.g.
 `MG-001-gemini-nullable-schema.md`. Keep the slug when the title changes.
