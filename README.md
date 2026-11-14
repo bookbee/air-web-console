@@ -35,7 +35,8 @@ make dev         # http://127.0.0.1:3000
 
 The demo gateway token and the `local` target both work as shipped — a
 fresh checkout needs no edits to run against sibling AIR services on their
-default ports (8081 air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway).
+default ports (8081 air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway,
+8087 air-rag-service).
 
 ### Two ways to run it
 

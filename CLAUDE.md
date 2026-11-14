@@ -19,8 +19,11 @@ fourth variant.
 
 air-web-console is a Next.js (App Router) console for hand-testing,
 integrating with, and evaluating the AIR platform services —
-**air-classifier-service**, **air-orchestrator-service**, **air-model-gateway** — individually and as an
-integrated whole, against any environment (local/QA/staging).
+**air-classifier-service**, **air-orchestrator-service**, **air-model-gateway**,
+**air-rag-service** — individually and as an integrated whole, against any
+environment (local/QA/staging). air-rag-service is read-only retrieval
+(`POST /v1/retrieve`, citations out) whose tenant comes from its key alone;
+its tab is "RAG" (`src/components/rag/`, `/api/rag`, `RAG_*` env keys).
 air-model-gateway is the service formerly called air-llm. Its display name
 and `ServiceKind` literal say `air-model-gateway`, but identifier-shaped
 names users already depend on keep `llm`: the `/api/llm` proxy route, the
@@ -52,8 +55,9 @@ build, so `make check` alone doesn't catch build-only failures.
 **Configuration** is all `AIR_WEB__`-prefixed env vars, parsed by
 `src/lib/config.ts`'s `loadDefaults()`. Targets are discovered dynamically:
 any `AIR_WEB__TARGETS__<NAME>__<FIELD>` defines target `<name>` (fields:
-`LABEL`, `{CLASSIFIER,ORCHESTRATOR,LLM}_BASE_URL`, `CLASSIFIER_API_KEY`,
-`ORCHESTRATOR_{CUSTOMER,BUSINESS}_API_KEY`, `LLM_API_KEY`, `VERIFY_TLS`) —
+`LABEL`, `{CLASSIFIER,ORCHESTRATOR,LLM,RAG}_BASE_URL`, `CLASSIFIER_API_KEY`,
+`ORCHESTRATOR_{CUSTOMER,BUSINESS}_API_KEY`, `LLM_API_KEY`, `RAG_API_KEY`,
+`VERIFY_TLS`) —
 adding an environment is an `.env.local` edit plus a restart, never a code
 change. `local` always exists via built-in defaults. air-orchestrator-service's
 channel is determined by *which key* is sent (customer key → `/v1/chat`,
@@ -68,7 +72,7 @@ the sibling services' own development keys/ports) whether run natively
 
 ## Architecture
 
-**Why a BFF at all:** none of the three AIR backend services have CORS
+**Why a BFF at all:** none of the AIR backend services have CORS
 configured, so a browser cannot call them directly. This console resolves
 that by putting a Node backend-for-frontend in front of every call. The
 browser only ever talks to this app's own origin.
@@ -117,8 +121,9 @@ through an unauthenticated `GET /api/config`. The fix, now in place:
 
 **One Next.js app is both the frontend and the BFF.** `src/app/api/**` are
 Route Handlers acting as the proxy; everything else under `src/app`/
-`src/components` is the console UI. Three catch-all routes —
-`api/classifier/[...path]`, `api/orchestrator/[...path]`, `api/llm/[...path]` —
+`src/components` is the console UI. Four catch-all routes —
+`api/classifier/[...path]`, `api/orchestrator/[...path]`, `api/llm/[...path]`,
+`api/rag/[...path]` —
 each pass their own `ServiceKind` literal into the one shared handler,
 `src/app/api/_lib/serviceProxy.ts`, built on `src/lib/http/proxy.ts`'s
 `forwardRequest`/`forwardStreamRequest`. Those two functions are the only
@@ -198,7 +203,7 @@ with default values — it changes what the real API sees.
 `Dockerfile`/`docker-compose.yml` exist so a developer with no Node
 toolchain can still `make up`. Inside the container `localhost` means the
 container, so `docker-compose.yml`'s `environment:` block re-points the
-`local` target's three base URLs at `host.docker.internal` (with
+`local` target's four base URLs at `host.docker.internal` (with
 `extra_hosts: host.docker.internal:host-gateway` for Linux) — verified
 end-to-end against a host-run air-classifier-service. `next.config.ts`'s `output:
 "standalone"` is what makes the runtime image copy only a traced
@@ -250,7 +255,15 @@ build on every push and PR.
   `bugs/model-gateway/last-run-<target>.txt`; it lives in
   `tests/live/*.live.test.ts` under `tests/live/vitest.config.mts`, which `make check`
   and CI deliberately exclude because it needs live services and makes small
-  paid calls.
+  paid calls. `make rag-check` is the same for air-rag-service
+  (`src/components/rag/data.ts`, report `bugs/rag/last-run-<target>.txt`); its
+  SIT rows come from `src/components/rag/sit-queries.json`, a verbatim copy of
+  `../air-rag-service/sit/queries.json` (the run reports drift). Its *headless*
+  rows (no key, a bad key, malformed JSON) can't go through the BFF, which
+  always attaches the target's key and sends JSON, so the live test alone
+  sends those straight to the service, like that repo's `sit_check.py`. Don't
+  add a client header to the BFF to make them browser-runnable: that would
+  let the browser choose what credential is sent.
 
 - Pure/testable logic lives deliberately separated from anything that
   imports `"server-only"` — `src/lib/location.ts`, `src/lib/format.ts`,

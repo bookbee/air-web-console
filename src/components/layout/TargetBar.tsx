@@ -178,16 +178,18 @@ export function TargetBar({
   orchestratorChat,
   orchestratorQuery,
   llm,
+  rag,
 }: {
   classifier: Connection;
   orchestratorChat: Connection;
   orchestratorQuery: Connection;
   llm: Connection;
+  rag: Connection;
 }) {
   const [results, setResults] = useState<Record<string, ProbeResult>>({});
   const [checking, setChecking] = useState(false);
 
-  const allConnections = [classifier, orchestratorChat, orchestratorQuery, llm];
+  const allConnections = [classifier, orchestratorChat, orchestratorQuery, llm, rag];
   const remote = allConnections.some(isRemote);
   const targetLabel = classifier.targetLabel;
 
@@ -201,6 +203,7 @@ export function TargetBar({
         ["air-classifier-service", classifier],
         ["air-orchestrator-service", orchestratorChat],
         ["air-model-gateway", llm],
+        ["air-rag-service", rag],
       ];
       const toProbe = candidates.filter(([, connection]) => connection.baseUrl.trim());
       const entries = await Promise.all(
@@ -255,6 +258,7 @@ export function TargetBar({
           result={results["air-orchestrator-service"]}
         />
         <ServiceTargetRow label="air-model-gateway" connection={llm} result={results["air-model-gateway"]} />
+        <ServiceTargetRow label="air-rag-service" connection={rag} result={results["air-rag-service"]} />
       </Box>
       <Button
         variant="outlined"

@@ -34,13 +34,14 @@ export const LOCAL_TARGET_NAME = "local";
  * client-held state**: nothing in this object ever reaches the browser.
  * The React app (everything under `src/components`) never sees, holds, or
  * sends any of these — only this Node.js server does, when it calls out to
- * air-classifier-service/air-orchestrator-service/air-model-gateway on the browser's behalf. That's the
+ * air-classifier-service/air-orchestrator-service/air-model-gateway/air-rag-service on the browser's behalf. That's the
  * whole point of the BFF: the "web client" is dumb by design, and a
  * backend process (this one) is what actually holds credentials, exactly
  * like any server calling another server would.
  *
  * The base URLs are the AIR port map (air-infra/README.md): 8081
- * air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway. The keys are the
+ * air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway, 8087
+ * air-rag-service. The keys are the
  * literal development tokens the sibling air-* services' own
  * `.env.example` files provision for local development — kept
  * byte-for-byte so a fresh checkout authenticates with zero edits on
@@ -57,11 +58,17 @@ const LOCAL_TARGET_DEV_DEFAULTS = {
   orchestratorBusinessKey: "airo_local_business_key",
   llmBaseUrl: "http://127.0.0.1:8083",
   llmApiKey: "air-client-dev",
+  ragBaseUrl: "http://127.0.0.1:8087",
+  ragApiKey: "airr_local_dev_key",
 } as const;
 
 export const DEFAULT_USD_TO_INR_RATE = 87.0;
 
-export type ServiceKind = "air-classifier-service" | "air-orchestrator-service" | "air-model-gateway";
+export type ServiceKind =
+  | "air-classifier-service"
+  | "air-orchestrator-service"
+  | "air-model-gateway"
+  | "air-rag-service";
 export type OrchestratorChannel = "customer" | "business";
 
 export interface ResolvedService {
@@ -70,13 +77,14 @@ export interface ResolvedService {
   verifyTls: boolean;
 }
 
-/** The strongest of the three services' locations — remote wins, even if
+/** The strongest of the services' locations — remote wins, even if
  * only one leg of an otherwise-local target points elsewhere. */
 export function targetLocation(target: Target): Location {
   const legs = new Set<Location>([
     locationOf(target.classifierBaseUrl),
     locationOf(target.orchestratorBaseUrl),
     locationOf(target.llmBaseUrl),
+    locationOf(target.ragBaseUrl),
   ]);
   if (legs.has("remote")) return "remote";
   if (legs.has("local")) return "local";
@@ -101,6 +109,9 @@ export function resolveService(
   if (service === "air-model-gateway") {
     return { baseUrl: target.llmBaseUrl, apiKey: target.llmApiKey, verifyTls: target.verifyTls };
   }
+  if (service === "air-rag-service") {
+    return { baseUrl: target.ragBaseUrl, apiKey: target.ragApiKey, verifyTls: target.verifyTls };
+  }
   return {
     baseUrl: target.orchestratorBaseUrl,
     apiKey: channel === "business" ? target.orchestratorBusinessKey : target.orchestratorCustomerKey,
@@ -124,6 +135,8 @@ export function toPublicDefaults(defaults: Defaults): PublicDefaults {
       orchestratorBusinessKeyed: target.orchestratorBusinessKey.trim().length > 0,
       llmBaseUrl: target.llmBaseUrl,
       llmKeyed: target.llmApiKey.trim().length > 0,
+      ragBaseUrl: target.ragBaseUrl,
+      ragKeyed: target.ragApiKey.trim().length > 0,
     };
   }
   return {
@@ -144,6 +157,8 @@ const TARGET_FIELDS = new Set([
   "ORCHESTRATOR_BUSINESS_API_KEY",
   "LLM_BASE_URL",
   "LLM_API_KEY",
+  "RAG_BASE_URL",
+  "RAG_API_KEY",
   "VERIFY_TLS",
 ]);
 
@@ -202,6 +217,8 @@ function buildLocal(fields: Record<string, string>, defaultVerifyTls: boolean): 
       get("ORCHESTRATOR_BUSINESS_API_KEY", defaults.orchestratorBusinessKey),
     llmBaseUrl: fields.LLM_BASE_URL || get("LLM_BASE_URL", defaults.llmBaseUrl),
     llmApiKey: fields.LLM_API_KEY || get("LLM_API_KEY", defaults.llmApiKey),
+    ragBaseUrl: fields.RAG_BASE_URL || get("RAG_BASE_URL", defaults.ragBaseUrl),
+    ragApiKey: fields.RAG_API_KEY || get("RAG_API_KEY", defaults.ragApiKey),
     verifyTls: boolField(fields.VERIFY_TLS, defaultVerifyTls),
   };
 }
@@ -232,6 +249,8 @@ export function loadDefaults(): Defaults {
       orchestratorBusinessKey: fields.ORCHESTRATOR_BUSINESS_API_KEY || "",
       llmBaseUrl: fields.LLM_BASE_URL || "",
       llmApiKey: fields.LLM_API_KEY || "",
+      ragBaseUrl: fields.RAG_BASE_URL || "",
+      ragApiKey: fields.RAG_API_KEY || "",
       verifyTls: boolField(fields.VERIFY_TLS, defaultVerifyTls),
     };
   }

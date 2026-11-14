@@ -18,6 +18,7 @@ Process, statuses and severities are in [../README.md](../README.md).
 | [OR-003](OR-003-classifier-spend-invisible.md) | Medium | verified | Classify-stage spend left out of `usage`, uncapped, and allowed to use the whole deadline |
 | [OR-004](OR-004-unknown-session-and-proposal-silent.md) | Medium | part 1 verified · part 2 wont-fix (design) | An unknown `session_id`/`proposal_id` is silently ignored with 200 |
 | [OR-005](OR-005-minor-items.md) | Low | verified (a,b,c,e) · d wont-fix | Minor: blank message billed, invalid `output_schema`, `allow_routes: []`, readiness, auth order |
+| [OR-006](OR-006-brand-name-defaults-to-air.md) | Low | open | Customer replies call the business "AIR" while answering from Brightcart's knowledge base |
 
 ## Test setup
 

@@ -1,7 +1,7 @@
 /**
  * The transport layer: one request in, one fully-described Exchange out.
  * Every catch-all proxy route (`/api/classifier/**`, `/api/orchestrator/**`,
- * `/api/llm/**`) forwards
+ * `/api/llm/**`, `/api/rag/**`) forwards
  * through `forwardRequest`/`forwardStreamRequest` below, so the response
  * pane never has to know which route produced an `Exchange`.
  *
