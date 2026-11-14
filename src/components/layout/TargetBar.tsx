@@ -179,17 +179,19 @@ export function TargetBar({
   orchestratorQuery,
   llm,
   rag,
+  tools,
 }: {
   classifier: Connection;
   orchestratorChat: Connection;
   orchestratorQuery: Connection;
   llm: Connection;
   rag: Connection;
+  tools: Connection;
 }) {
   const [results, setResults] = useState<Record<string, ProbeResult>>({});
   const [checking, setChecking] = useState(false);
 
-  const allConnections = [classifier, orchestratorChat, orchestratorQuery, llm, rag];
+  const allConnections = [classifier, orchestratorChat, orchestratorQuery, llm, rag, tools];
   const remote = allConnections.some(isRemote);
   const targetLabel = classifier.targetLabel;
 
@@ -204,6 +206,7 @@ export function TargetBar({
         ["air-orchestrator-service", orchestratorChat],
         ["air-model-gateway", llm],
         ["air-rag-service", rag],
+        ["air-tools-gateway", tools],
       ];
       const toProbe = candidates.filter(([, connection]) => connection.baseUrl.trim());
       const entries = await Promise.all(
@@ -259,6 +262,15 @@ export function TargetBar({
         />
         <ServiceTargetRow label="air-model-gateway" connection={llm} result={results["air-model-gateway"]} />
         <ServiceTargetRow label="air-rag-service" connection={rag} result={results["air-rag-service"]} />
+        <ServiceTargetRow
+          label="air-tools-gateway"
+          connection={tools}
+          keyChips={[
+            { prefix: "read", connection: tools },
+            { prefix: "execute", connection: { ...tools, authenticated: Boolean(tools.executeKeyed) } },
+          ]}
+          result={results["air-tools-gateway"]}
+        />
       </Box>
       <Button
         variant="outlined"

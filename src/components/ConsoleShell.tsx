@@ -14,10 +14,11 @@ import { OrchestratorTab } from "@/components/orchestrator/OrchestratorTab";
 import { RagTab } from "@/components/rag/RagTab";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { SystemTab } from "@/components/system/SystemTab";
+import { ToolsTab } from "@/components/tools/ToolsTab";
 import { useConfig } from "@/hooks/useConfig";
 import { useConnections } from "@/store/connectionStore";
 
-const TAB_NAMES = ["Classifier", "Orchestrator", "Model Gateway", "RAG", "System"] as const;
+const TAB_NAMES = ["Classifier", "Orchestrator", "Model Gateway", "RAG", "Tools Gateway", "System"] as const;
 
 export function ConsoleShell() {
   const { hydrated } = useConfig();
@@ -43,6 +44,7 @@ export function ConsoleShell() {
           orchestratorQuery={connections.orchestratorQuery}
           llm={connections.llm}
           rag={connections.rag}
+          tools={connections.tools}
         />
         <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ mb: 2 }}>
           {TAB_NAMES.map((name) => (
@@ -65,11 +67,15 @@ export function ConsoleShell() {
           {tab === 3 && <RagTab connection={connections.rag} />}
         </Box>
         <Box role="tabpanel" hidden={tab !== 4}>
-          {tab === 4 && (
+          {tab === 4 && <ToolsTab connection={connections.tools} />}
+        </Box>
+        <Box role="tabpanel" hidden={tab !== 5}>
+          {tab === 5 && (
             <SystemTab
               classifier={connections.classifier}
               llm={connections.llm}
               rag={connections.rag}
+              tools={connections.tools}
               orchestratorChat={connections.orchestratorChat}
               orchestratorQuery={connections.orchestratorQuery}
             />

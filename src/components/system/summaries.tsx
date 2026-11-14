@@ -232,11 +232,12 @@ export function ReadinessSummary({ payload }: { payload: unknown }) {
 
       <ProviderMapBlock payload={body} meaning="reachable" />
 
-      {["components", "dependencies"].map((key) => {
+      {["components", "dependencies", "checks"].map((key) => {
         const rows = body[key];
         if (!Array.isArray(rows) || rows.length === 0) return null;
+        // air-tools-gateway reports `checks: [{name, ok}]`.
         const notReady = rows
-          .filter((r) => r.ready === false || r.reachable === false)
+          .filter((r) => r.ready === false || r.reachable === false || r.ok === false)
           .map((r) => String(r.name ?? r.service ?? "?"));
         return (
           <Section key={key} title={key}>

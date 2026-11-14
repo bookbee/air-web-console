@@ -99,6 +99,7 @@ export interface Connections {
   orchestratorQuery: Connection;
   llm: Connection;
   rag: Connection;
+  tools: Connection;
 }
 
 type ConnectionFieldsSlice = Pick<ConnectionState, "targets" | "selectedTarget" | "timeoutSeconds"> &
@@ -115,7 +116,7 @@ export function customerFor(state: ConnectionFieldsSlice): string | undefined {
 
 /** The four Connection objects every tab and the target bar read from —
  * classifier, orchestrator (chat route/customer channel), orchestrator
- * (query route/business channel), llm, rag. A pure function of the store's
+ * (query route/business channel), llm, rag, tools. A pure function of the store's
  * primitive fields, not itself a Zustand selector (see `useConnections`
  * below for the memoized hook every component should actually use — a raw
  * `useConnectionStore(buildConnections)` would allocate a new object every
@@ -161,6 +162,13 @@ export function buildConnections(state: ConnectionFieldsSlice): Connections {
       service: "air-rag-service",
       baseUrl: target?.ragBaseUrl ?? "",
       authenticated: target?.ragKeyed ?? false,
+    },
+    tools: {
+      ...base,
+      service: "air-tools-gateway",
+      baseUrl: target?.toolsBaseUrl ?? "",
+      authenticated: target?.toolsReadKeyed ?? false,
+      executeKeyed: target?.toolsExecuteKeyed ?? false,
     },
   };
 }

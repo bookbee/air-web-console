@@ -6,7 +6,7 @@ IMAGE   ?= air-web-console
 TAG     ?= local
 
 .DEFAULT_GOAL := help
-.PHONY: help install env dev build start lint typecheck test check gateway-check rag-check customer-token-key image up down logs clean
+.PHONY: help install env dev build start lint typecheck test check gateway-check rag-check tools-check customer-token-key image up down logs clean
 
 help: ## Show this help
 	@echo "AIR Web Console (air-web-console) — make <target>"
@@ -54,6 +54,12 @@ rag-check: ## Run every RAG contract + SIT scenario against a live air-rag-servi
 	@set -a; . ./.env.local; set +a; \
 		CONSOLE_URL=http://$(HOST):$(PORT) RAG_TARGET=$(RAG_TARGET) \
 		npx vitest run --config tests/live/vitest.config.mts tests/live/rag-check.live.test.ts
+
+TOOLS_TARGET ?= local
+tools-check: ## Run every Tools Gateway simulation against a live air-tools-gateway (console must be serving; TOOLS_TARGET=local)
+	@set -a; . ./.env.local; set +a; \
+		CONSOLE_URL=http://$(HOST):$(PORT) TOOLS_TARGET=$(TOOLS_TARGET) \
+		npx vitest run --config tests/live/vitest.config.mts tests/live/tools-check.live.test.ts
 
 customer-token-key: ## Generate a customer-token signing pair (private line for .env.local; public PEM + JWK for the orchestrator). KID=brightcart-dev-1
 	@node scripts/gen-customer-token-key.mjs $(KID)

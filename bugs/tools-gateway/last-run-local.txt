@@ -1,0 +1,38 @@
+air-tools-gateway simulation run · 2026-11-14T18:46:20.786Z
+console http://host.docker.internal:3001 · target local · gateway http://host.docker.internal:8084 · direct http://host.docker.internal:8084
+health {"status":"ok"} · fixture checks on · writes on
+fixtures match ../air-tools-gateway/fixtures
+
+PASS    system                 health                   bff    [200]
+PASS    system                 ready                    bff    [200]
+PASS    system                 metrics                  bff    [200]
+PASS    capabilities           inventory                bff    [200]
+PASS    reads                  recent-orders            bff    [200]
+PASS    reads                  recent-limit             bff    [200]
+PASS    reads                  order-detail             bff    [200]
+PASS    ownership & isolation  not-yours-get            bff    [404,404]
+PASS    ownership & isolation  not-yours-propose        bff    [404,404]
+PASS    rejections             wrong-kind               bff    [404]
+PASS    rejections             read-proposed            bff    [404]
+PASS    rejections             unknown-capability       bff    [404]
+PASS    rejections             bad-arguments            bff    [400]
+PASS    rejections             limit-range              bff    [400]
+PASS    rejections             null-subject             bff    [400]
+PASS    rejections             tenant-in-envelope       bff    [400]
+PASS    rejections             subject-in-arguments     bff    [400]
+PASS    rejections             shipped                  bff    [422,422]
+FAIL    execute                execute-no-key           bff    [404]  step 1 · execute, no Idempotency-Key: got 404 not_found "No such endpoint."
+FAIL    execute                execute-short-key        bff    [404]  step 1 · execute, 15-character key: got 404 not_found "No such endpoint."
+PASS    execute                execute-unknown          bff    [404]
+PASS    execute                execute-wrong-subject    bff    [200,404,200]
+PASS    headless               no-key                   direct [401]
+PASS    headless               bad-key                  direct [401]
+PASS    headless               execute-key-reads        direct [403,403,403]
+FAIL    headless               read-key-executes        direct [404]  step 1 · execute with the read key: got 404 not_found "No such endpoint."
+PASS    headless               malformed-json           direct [400]
+PASS    headless               cross-tenant             direct [200,404,200]
+PASS    headless               cross-tenant-proposal    direct [200,404]
+FAIL    conversations          cancel-last-order        bff    [200,200,200,404]  step 4 · turn 2 · confirm: execute: got 404 not_found "No such endpoint."
+FAIL    conversations          double-confirm           bff    [200,404,404]  step 2 · two executes, sent together: got 404 not_found "No such endpoint."
+
+contract 26/31 passed · skipped 0 · known gaps open 0

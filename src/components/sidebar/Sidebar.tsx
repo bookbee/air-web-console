@@ -197,6 +197,23 @@ export function Sidebar() {
             Read-only retrieval. The tenant comes from the <b>key</b>; a request can&apos;t name one.
           </Typography>
           <ServiceStatus label="Base URL" baseUrl={target.ragBaseUrl} keyed={target.ragKeyed} route="/v1/retrieve" />
+
+          <Divider sx={{ my: 2 }} />
+
+          <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+            air-tools-gateway
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+            Declared lookups and changes. The <b>read</b> key serves tools and propose; only the <b>execute</b> key can
+            change anything, and without one the console refuses execute.
+          </Typography>
+          <ServiceStatus label="read key" baseUrl={target.toolsBaseUrl} keyed={target.toolsReadKeyed} route="/v1/tools/{name}" />
+          <ServiceStatus
+            label="execute key"
+            baseUrl={target.toolsBaseUrl}
+            keyed={target.toolsExecuteKeyed}
+            route="/v1/actions/{name}/execute"
+          />
         </>
       ) : (
         <Typography variant="caption" color="error">

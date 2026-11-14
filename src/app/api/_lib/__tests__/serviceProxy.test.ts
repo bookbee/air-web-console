@@ -183,3 +183,93 @@ describe("the proxy", () => {
     expect(exchange.customerToken?.mode).toBe("valid");
   });
 });
+
+describe("air-tools-gateway", () => {
+  async function tools(path: string, { target = "local", idempotencyKey, method = "POST" }: { target?: string; idempotencyKey?: string; method?: string } = {}) {
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${GATEWAY}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-Target-Name": target,
+      // A client can't pick a key: these must be ignored.
+      "X-API-Key": "client-chosen-key",
+      "X-Target-Channel": "business",
+    };
+    if (idempotencyKey !== undefined) headers["Idempotency-Key"] = idempotencyKey;
+    const segments = path.split("/").filter(Boolean);
+    const request = new NextRequest(`http://console.test/api/tools${path}`, {
+      method,
+      headers,
+      body: method === "GET" ? undefined : JSON.stringify({ arguments: {}, subject: "cust_1001" }),
+    });
+    const response = await handleServiceProxy(request, segments, "air-tools-gateway");
+    return (await response.json()) as Exchange;
+  }
+
+  beforeEach(() => {
+    vi.stubEnv("AIR_WEB__TARGETS__QA__TOOLS_BASE_URL", "https://tools.qa.example.internal");
+    vi.stubEnv("AIR_WEB__TARGETS__QA__TOOLS_READ_API_KEY", "qa-read-key");
+  });
+
+  it.each([["/v1/tools/orders.get"], ["/v1/actions/orders.cancel/propose"], ["/v1/capabilities"]])(
+    "sends the read key for %s, whatever the client says",
+    async (path) => {
+      await tools(path, { method: path === "/v1/capabilities" ? "GET" : "POST" });
+      const [url] = fetchMock.mock.calls.at(-1)!;
+      expect(String(url)).toBe(`http://127.0.0.1:8084${path}`);
+      expect(upstreamHeaders()["X-API-Key"]).toBe("airtg_read_local_dev");
+    },
+  );
+
+  it("sends the execute key only for execute, with the client's Idempotency-Key", async () => {
+    await tools("/v1/actions/orders.cancel/execute", { idempotencyKey: "console-test-0000000001" });
+    expect(upstreamHeaders()["X-API-Key"]).toBe("airtg_exec_local_dev");
+    expect(upstreamHeaders()["Idempotency-Key"]).toBe("console-test-0000000001");
+  });
+
+  it("forwards a key the gateway should reject, so its own 400 is tested", async () => {
+    await tools("/v1/actions/orders.cancel/execute", { idempotencyKey: "short" });
+    expect(upstreamHeaders()["Idempotency-Key"]).toBe("short");
+  });
+
+  it("sends no Idempotency-Key when the client sent none", async () => {
+    await tools("/v1/actions/orders.cancel/execute");
+    expect(upstreamHeaders()["Idempotency-Key"]).toBeUndefined();
+  });
+
+  it("refuses execute on a target with no execute key, without calling upstream", async () => {
+    const exchange = await tools("/v1/actions/orders.cancel/execute", { target: "qa", idempotencyKey: "console-test-0000000001" });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(exchange.error).toMatch(/no tools-gateway execute key/);
+    // Reads on that target still go, with its read key.
+    await tools("/v1/tools/orders.get", { target: "qa" });
+    expect(upstreamHeaders()["X-API-Key"]).toBe("qa-read-key");
+  });
+
+  it("refuses an Idempotency-Key that isn't a sane header value", async () => {
+    const exchange = await tools("/v1/actions/orders.cancel/execute", { idempotencyKey: "x".repeat(300) });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(exchange.error).toMatch(/over 256/);
+  });
+
+  it("never passes Idempotency-Key to another service", async () => {
+    const request = new NextRequest("http://console.test/api/rag/v1/retrieve", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${GATEWAY}`, "Content-Type": "application/json", "X-Target-Name": "local", "Idempotency-Key": "console-test-0000000001" },
+      body: JSON.stringify({ query: "x" }),
+    });
+    await handleServiceProxy(request, ["v1", "retrieve"], "air-rag-service");
+    expect(upstreamHeaders()["Idempotency-Key"]).toBeUndefined();
+  });
+
+  it("masks the key in the Exchange and exposes only booleans in public config", async () => {
+    const exchange = await tools("/v1/actions/orders.cancel/execute", { idempotencyKey: "console-test-0000000001" });
+    expect(exchange.requestHeaders["X-API-Key"]).toBe("••••••••");
+    expect(toCurl(exchange)).not.toContain("airtg_exec_local_dev");
+    const json = JSON.stringify(toPublicDefaults(loadDefaults()));
+    expect(json).not.toContain("airtg_");
+    expect(json).not.toContain("qa-read-key");
+    expect(toPublicDefaults(loadDefaults()).targets.local).toMatchObject({ toolsBaseUrl: "http://127.0.0.1:8084", toolsReadKeyed: true, toolsExecuteKeyed: true });
+    expect(toPublicDefaults(loadDefaults()).targets.qa).toMatchObject({ toolsReadKeyed: true, toolsExecuteKeyed: false });
+  });
+});

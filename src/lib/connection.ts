@@ -20,7 +20,8 @@ export type ServiceName =
   | "air-classifier-service"
   | "air-orchestrator-service"
   | "air-model-gateway"
-  | "air-rag-service";
+  | "air-rag-service"
+  | "air-tools-gateway";
 
 export interface Connection {
   service: ServiceName;
@@ -39,6 +40,9 @@ export interface Connection {
   /** A dev-only SIT mode for that token, applied by the BFF only where the
    * target allows test modes. */
   customerTokenMode?: CustomerTokenMode;
+  /** air-tools-gateway only: whether the target has an execute key. Without
+   * one the BFF refuses execute; `authenticated` is the read key. */
+  executeKeyed?: boolean;
 }
 
 export function connectionLocation(connection: Connection): Location {

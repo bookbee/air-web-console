@@ -35,6 +35,13 @@ export interface Target {
   llmApiKey: string;
   ragBaseUrl: string;
   ragApiKey: string;
+  toolsBaseUrl: string;
+  /** air-tools-gateway's `read` key: capabilities, tools and propose. */
+  toolsReadApiKey: string;
+  /** air-tools-gateway's `execute` key: execute only. Configuring it is the
+   * opt-in to real writes on this target; without it the BFF refuses
+   * execute itself. */
+  toolsExecuteApiKey: string;
   /** Null when the target doesn't offer customer tokens. */
   orchestratorCustomerToken: CustomerTokenConfig | null;
   /** Set when the fields are half-configured or the key is unusable; the
@@ -68,6 +75,9 @@ export interface PublicTarget {
   llmKeyed: boolean;
   ragBaseUrl: string;
   ragKeyed: boolean;
+  toolsBaseUrl: string;
+  toolsReadKeyed: boolean;
+  toolsExecuteKeyed: boolean;
   /** The target mints customer tokens. The key, kid, issuer and tenant
    * stay server-side; only this flag and the subjects are public. */
   orchestratorCustomerTokenConfigured: boolean;

@@ -1,0 +1,42 @@
+{
+  "orders": [
+    {
+      "order_id": "55120",
+      "customer_id": "cust_2001",
+      "placed_at": "2026-11-10",
+      "status": "confirmed",
+      "total": { "amount": "799.00", "currency": "INR" },
+      "expected_delivery": "2026-11-17",
+      "items": [
+        {
+          "name": "Othershop desk lamp",
+          "qty": 1,
+          "price": { "amount": "799.00", "currency": "INR" }
+        }
+      ],
+      "tracking": null,
+      "returnable": false
+    },
+    {
+      "order_id": "90001",
+      "customer_id": "cust_1001",
+      "placed_at": "2026-11-01",
+      "status": "delivered",
+      "total": { "amount": "350.00", "currency": "INR" },
+      "expected_delivery": "2026-11-05",
+      "items": [
+        {
+          "name": "Othershop notebook, A5",
+          "qty": 2,
+          "price": { "amount": "175.00", "currency": "INR" }
+        }
+      ],
+      "tracking": {
+        "carrier": "Ekart",
+        "status": "delivered",
+        "last_update": "2026-11-05T11:20:00Z"
+      },
+      "returnable": true
+    }
+  ]
+}

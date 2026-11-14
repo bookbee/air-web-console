@@ -17,12 +17,14 @@ export function SystemTab({
   classifier,
   llm,
   rag,
+  tools,
   orchestratorChat,
   orchestratorQuery,
 }: {
   classifier: Connection;
   llm: Connection;
   rag: Connection;
+  tools: Connection;
   orchestratorChat: Connection;
   orchestratorQuery: Connection;
 }) {
@@ -49,6 +51,11 @@ export function SystemTab({
 
       <SectionTitle>air-rag-service</SectionTitle>
       <ProbePanel connection={rag} slot="system-rag" />
+
+      <Divider sx={{ my: 3 }} />
+
+      <SectionTitle>air-tools-gateway</SectionTitle>
+      <ProbePanel connection={tools} slot="system-tools" />
 
       <Divider sx={{ my: 3 }} />
 

@@ -21,6 +21,7 @@ const ROUTE_PREFIX: Record<Connection["service"], string> = {
   "air-orchestrator-service": "/api/orchestrator",
   "air-model-gateway": "/api/llm",
   "air-rag-service": "/api/rag",
+  "air-tools-gateway": "/api/tools",
 };
 
 export interface SendOptions {
@@ -33,6 +34,9 @@ export interface SendOptions {
   live?: boolean;
   /** With `live`: called with each frame as it arrives. */
   onFrame?: (frame: SseEvent) => void;
+  /** air-tools-gateway execute: sent as `Idempotency-Key`, the one request
+   * header the BFF passes through. */
+  idempotencyKey?: string;
 }
 
 /** Send one request through this service's BFF proxy route. Always
@@ -62,6 +66,7 @@ export async function sendViaProxy(
       headers["X-Target-Customer-Token-Mode"] = connection.customerTokenMode;
     }
   }
+  if (options.idempotencyKey !== undefined) headers["Idempotency-Key"] = options.idempotencyKey;
   const live = Boolean(options.stream && options.live);
   if (live) headers[LIVE_STREAM_HEADER] = LIVE_STREAM_VALUE;
 
