@@ -13,6 +13,7 @@
  * holding the credential itself.
  */
 
+import type { CustomerTokenMode } from "./customerTokenModes";
 import { locationOf, type Location } from "./location";
 
 export type ServiceName =
@@ -31,6 +32,13 @@ export interface Connection {
   /** air-orchestrator-service's channel, when the service has one. It belongs to the key
    * rather than the request, so it travels with the connection. */
   channel?: "customer" | "business";
+  /** Customer channel only: the customer a request is made "as". A name the
+   * target's own config lists; the BFF mints the token, the browser never
+   * holds one. Absent: an anonymous customer. */
+  customer?: string;
+  /** A dev-only SIT mode for that token, applied by the BFF only where the
+   * target allows test modes. */
+  customerTokenMode?: CustomerTokenMode;
 }
 
 export function connectionLocation(connection: Connection): Location {

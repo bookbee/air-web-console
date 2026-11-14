@@ -23,12 +23,20 @@
  *
  * A stream asked for live (`X-Stream-Mode: live`, see `lib/http/live.ts`)
  * answers NDJSON instead: each frame as it arrives, then that same Exchange.
+ *
+ * On air-orchestrator-service's customer channel the client may also *name* a
+ * customer (`X-Target-Customer`). The server mints a development customer
+ * token for it (`lib/auth/customerToken.ts`) only when the target lists that
+ * customer, and sends it as `air-token`; the Exchange carries the token's
+ * display claims, never the token.
  */
 import { NextResponse, type NextRequest } from "next/server";
 
 import { assertGatewayAuthorized } from "@/lib/auth/gatewayAuth";
 import { upstreamPath } from "@/lib/http/upstreamPath";
-import { loadDefaults, resolveService, type OrchestratorChannel, type ServiceKind } from "@/lib/config";
+import { displayClaims, mintCustomerToken } from "@/lib/auth/customerToken";
+import { loadDefaults, resolveService, type OrchestratorChannel, type ServiceKind, type Target } from "@/lib/config";
+import { parseMode, type CustomerTokenClaims } from "@/lib/customerTokenModes";
 import { displayHeaders, type Exchange } from "@/lib/http/exchange";
 import {
   encodeLiveLine,
@@ -70,14 +78,44 @@ function clampTimeout(raw: string | null): number {
 /** The upstream key was needed to make the call; it must not ride back to
  * the browser inside the Exchange. Masked here, server-side, not left to the
  * response pane's display helpers. */
-function masked(exchange: Exchange): Exchange {
-  return { ...exchange, requestHeaders: displayHeaders(exchange.requestHeaders) };
+function masked(exchange: Exchange, customerToken?: CustomerTokenClaims): Exchange {
+  const out: Exchange = { ...exchange, requestHeaders: displayHeaders(exchange.requestHeaders) };
+  if (customerToken) out.customerToken = customerToken;
+  return out;
+}
+
+export const CUSTOMER_HEADER = "x-target-customer";
+export const CUSTOMER_TOKEN_MODE_HEADER = "x-target-customer-token-mode";
+
+type CustomerToken = { token?: string; claims?: CustomerTokenClaims; error?: string };
+
+/** The customer token for this request, if any. Only the orchestrator's
+ * customer channel ever gets one, and only for a customer the target itself
+ * lists: the client names, the server resolves. */
+async function customerTokenFor(
+  request: NextRequest,
+  target: Target,
+  service: ServiceKind,
+  channel: OrchestratorChannel | undefined,
+): Promise<CustomerToken> {
+  if (service !== "air-orchestrator-service" || channel !== "customer") return {};
+  const subject = (request.headers.get(CUSTOMER_HEADER) ?? "").trim();
+  if (!subject) return {};
+  if (target.orchestratorCustomerTokenError) {
+    return { error: `Refused: customer tokens are misconfigured on this target (${target.orchestratorCustomerTokenError}).` };
+  }
+  const config = target.orchestratorCustomerToken;
+  if (!config) return { error: "Refused: this target has no customer token configured, so it can't act as a customer." };
+  if (!config.subjects.includes(subject)) return { error: "Refused: customer not configured for this target." };
+  const mode = target.orchestratorCustomerTokenTestModes ? parseMode(request.headers.get(CUSTOMER_TOKEN_MODE_HEADER)) : "valid";
+  const token = await mintCustomerToken(config, subject, Date.now(), mode);
+  return { token, claims: displayClaims(token, mode) };
 }
 
 /** The live transport: frames go out as the upstream sends them. If the
  * browser goes away, the upstream call is aborted, so the service stops
  * generating instead of finishing an answer nobody reads. */
-function liveStream(request: NextRequest, options: ForwardOptions): Response {
+function liveStream(request: NextRequest, options: ForwardOptions, customerToken?: CustomerTokenClaims): Response {
   const encoder = new TextEncoder();
   const abort = new AbortController();
   const stream = new ReadableStream<Uint8Array>({
@@ -94,7 +132,7 @@ function liveStream(request: NextRequest, options: ForwardOptions): Response {
         signal: AbortSignal.any([request.signal, abort.signal]),
         onEvent: (frame) => send({ frame }),
       });
-      send({ exchange: masked(exchange) });
+      send({ exchange: masked(exchange, customerToken) });
       try {
         controller.close();
       } catch {
@@ -166,11 +204,22 @@ export async function handleServiceProxy(
     }
   }
 
+  const customer = await customerTokenFor(request, defaults.targets[resolvedTargetName], service, channel);
+  if (customer.error) return NextResponse.json(emptyExchange(request.method, path, customer.error));
+
   const wantsStream = (request.headers.get("accept") ?? "").includes("text/event-stream");
-  const options: ForwardOptions = { method: request.method, url, apiKey, timeoutSeconds, verifyTls, body };
+  const options: ForwardOptions = {
+    method: request.method,
+    url,
+    apiKey,
+    timeoutSeconds,
+    verifyTls,
+    body,
+    customerToken: customer.token,
+  };
   if (wantsStream && request.headers.get(LIVE_STREAM_HEADER) === LIVE_STREAM_VALUE) {
-    return liveStream(request, options);
+    return liveStream(request, options, customer.claims);
   }
   const transport = wantsStream ? forwardStreamRequest : forwardRequest;
-  return NextResponse.json(masked(await transport(options)));
+  return NextResponse.json(masked(await transport(options), customer.claims));
 }

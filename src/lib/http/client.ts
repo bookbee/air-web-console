@@ -54,6 +54,14 @@ export async function sendViaProxy(
     "X-Target-Timeout-Seconds": String(connection.timeoutSeconds),
   };
   if (connection.channel) headers["X-Target-Channel"] = connection.channel;
+  // A customer is named only on the customer channel; the BFF decides whether
+  // that name is one it will mint a token for.
+  if (connection.channel === "customer" && connection.customer) {
+    headers["X-Target-Customer"] = connection.customer;
+    if (connection.customerTokenMode && connection.customerTokenMode !== "valid") {
+      headers["X-Target-Customer-Token-Mode"] = connection.customerTokenMode;
+    }
+  }
   const live = Boolean(options.stream && options.live);
   if (live) headers[LIVE_STREAM_HEADER] = LIVE_STREAM_VALUE;
 
