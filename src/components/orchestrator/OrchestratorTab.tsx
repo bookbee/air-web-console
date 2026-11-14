@@ -22,9 +22,11 @@ import { ResponseView } from "@/components/shared/ResponseView";
 import { SendRow } from "@/components/shared/SendRow";
 import { useSendRequest } from "@/hooks/useSendRequest";
 import type { Connection } from "@/lib/connection";
+import { describeCustomer, type CustomerTokenMode } from "@/lib/customerTokenModes";
 import { joinUrl, type Exchange } from "@/lib/http/exchange";
 import { parseJsonObject } from "@/lib/validators";
 
+import { CustomerPicker } from "./CustomerPicker";
 import { ROUTES } from "./data";
 import { foldEvents, isSessionNotFound } from "./events";
 import { OptionsEditor } from "./OptionsEditor";
@@ -47,7 +49,11 @@ function resolvePayload(exchange: Exchange): Record<string, unknown> | null {
 export function OrchestratorTab({ chat, query }: { chat: Connection; query: Connection }) {
   const [routeKey, setRouteKey] = useState<"chat" | "query">("chat");
   const route = ROUTES.find((r) => r.key === routeKey)!;
-  const connection = route.key === "chat" ? chat : query;
+  // The token mode belongs to this tab session, not the target: it resets to
+  // `valid` on reload, so a SIT mode is never left on by accident.
+  const [tokenMode, setTokenMode] = useState<CustomerTokenMode>("valid");
+  const chatConnection = useMemo(() => ({ ...chat, customerTokenMode: tokenMode }), [chat, tokenMode]);
+  const connection = route.key === "chat" ? chatConnection : query;
 
   const [text, setText] = useState("");
   const [sessionId, setSessionId] = useState("");
@@ -141,6 +147,17 @@ export function OrchestratorTab({ chat, query }: { chat: Connection; query: Conn
         sends the {route.channel} key. The other key would be a 403 here.
       </Typography>
 
+      {route.key === "chat" && (
+        <CustomerPicker
+          mode={tokenMode}
+          onModeChange={setTokenMode}
+          onCustomerChange={() => {
+            setSessionId("");
+            setTranscript([]);
+          }}
+        />
+      )}
+
       <Grid container spacing={2} sx={{ mb: 1.5 }}>
         {ROUTES.map((r) => (
           <Grid key={r.key} size={{ xs: 12, sm: 6 }}>
@@ -231,6 +248,11 @@ export function OrchestratorTab({ chat, query }: { chat: Connection; query: Conn
           >
             Response
           </Typography>
+          {route.key === "chat" && (
+            <Typography variant="body2" sx={{ mb: 1 }} data-testid="customer-summary">
+              Sent {describeCustomer((mutation.data as Exchange).customerToken)}.
+            </Typography>
+          )}
           <ResponseView
             exchange={mutation.data as Exchange}
             storageKey={`orchestrator-${route.key}`}

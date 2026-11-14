@@ -14,7 +14,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { Agent, fetch as undiciFetch } from "undici";
 
-import type { Exchange, SseEvent } from "./exchange";
+import { CUSTOMER_TOKEN_HEADER, type Exchange, type SseEvent } from "./exchange";
 
 export interface ForwardOptions {
   method: string;
@@ -23,6 +23,9 @@ export interface ForwardOptions {
   timeoutSeconds: number;
   verifyTls: boolean;
   body?: unknown;
+  /** A customer token already minted by the caller (`serviceProxy.ts`); this
+   * module only carries it. */
+  customerToken?: string;
   /** Stream only: aborts the upstream call (the browser went away). */
   signal?: AbortSignal;
   /** Stream only: called with each frame the moment it is read, for the
@@ -30,12 +33,13 @@ export interface ForwardOptions {
   onEvent?: (event: SseEvent) => void;
 }
 
-function buildHeaders(apiKey: string, accept: string): Record<string, string> {
+function buildHeaders(apiKey: string, accept: string, customerToken?: string): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: accept,
   };
   if (apiKey.trim()) headers["X-API-Key"] = apiKey.trim();
+  if (customerToken) headers[CUSTOMER_TOKEN_HEADER] = customerToken;
   headers["X-Request-ID"] = `web_${randomUUID().replace(/-/g, "").slice(0, 20)}`;
   return headers;
 }
@@ -50,7 +54,7 @@ function connectErrorMessage(url: string): string {
 
 /** A single JSON request/response round trip. */
 export async function forwardRequest(options: ForwardOptions): Promise<Exchange> {
-  const headers = buildHeaders(options.apiKey, "application/json");
+  const headers = buildHeaders(options.apiKey, "application/json", options.customerToken);
   const requestBody = options.body !== undefined ? options.body : null;
   const exchange: Exchange = {
     method: options.method.toUpperCase(),
@@ -191,7 +195,7 @@ async function readSseEvents(
  * collected transport; the live transport also passes each frame on through
  * `onEvent` as it arrives (see `live.ts`), then sends the same Exchange. */
 export async function forwardStreamRequest(options: ForwardOptions): Promise<Exchange> {
-  const headers = buildHeaders(options.apiKey, "text/event-stream");
+  const headers = buildHeaders(options.apiKey, "text/event-stream", options.customerToken);
   const requestBody = options.body !== undefined ? options.body : null;
   const exchange: Exchange = {
     method: options.method.toUpperCase(),

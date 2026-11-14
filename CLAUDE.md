@@ -57,7 +57,8 @@ build, so `make check` alone doesn't catch build-only failures.
 any `AIR_WEB__TARGETS__<NAME>__<FIELD>` defines target `<name>` (fields:
 `LABEL`, `{CLASSIFIER,ORCHESTRATOR,LLM,RAG}_BASE_URL`, `CLASSIFIER_API_KEY`,
 `ORCHESTRATOR_{CUSTOMER,BUSINESS}_API_KEY`, `LLM_API_KEY`, `RAG_API_KEY`,
-`VERIFY_TLS`) —
+`VERIFY_TLS`, and the customer-token six
+`ORCHESTRATOR_CUSTOMER_TOKEN_{PRIVATE_KEY,KID,ISSUER,TENANT,TTL_S,SUBJECTS}`) —
 adding an environment is an `.env.local` edit plus a restart, never a code
 change. `local` always exists via built-in defaults. air-orchestrator-service's
 channel is determined by *which key* is sent (customer key → `/v1/chat`,
@@ -93,14 +94,33 @@ through an unauthenticated `GET /api/config`. The fix, now in place:
   `GET /api/config` actually returns to the browser — base URLs stay (not
   secret, needed so the UI can state its destination plainly), every key
   becomes a `*_keyed: boolean`.
-- **The client names a target and, for air-orchestrator-service, a channel — nothing
-  else.** `X-Target-Name` (+ `X-Target-Channel: customer|business`) are the
-  only connection-shaped headers `src/app/api/_lib/serviceProxy.ts` reads.
+- **The client names a target and, for air-orchestrator-service, a channel
+  and a customer — nothing else.** `X-Target-Name` (+ `X-Target-Channel:
+  customer|business`, + `X-Target-Customer` and the dev-only
+  `X-Target-Customer-Token-Mode`) are the only connection-shaped headers
+  `src/app/api/_lib/serviceProxy.ts` reads.
   An unrecognized target name falls back to the server's configured
   default rather than erroring — never to a client-supplied host.
   Client-requested timeout is honored but clamped server-side to
   `[1, 120]` seconds; TLS verification is a per-target *server* setting
   (`Target.verifyTls`), never a per-request client choice.
+- **Customer tokens are minted server-side, never chosen by the client.**
+  For a customer-channel orchestrator request naming a customer,
+  `serviceProxy.ts` mints a fresh ES256 JWT per request
+  (`src/lib/auth/customerToken.ts`, air-orchestrator-service spec 0014) and
+  sends it as `air-token` beside `X-API-Key` (the header the spec's
+  `REQ-CTK-001` names, matching existing AIR applications). It mints only
+  for a subject the target's own
+  `ORCHESTRATOR_CUSTOMER_TOKEN_SUBJECTS` lists. Anything else is refused as
+  an `Exchange.error` with no upstream call, never sent anonymously. The
+  signing key is an upstream credential exactly like an API key: never in
+  `NEXT_PUBLIC_*`, a response or an `Exchange`. The `Exchange` carries only
+  display claims (`customerToken`), and `air-token` is in `SECRET_HEADERS`.
+  `PublicTarget` exposes only `orchestratorCustomerTokenConfigured`, the
+  subjects, a config error and whether test modes are allowed. Test modes
+  (expired, wrong tenant, tampered) apply only on a dev server or with
+  `AIR_WEB__CUSTOMER_TOKEN_TEST_MODES=true`, and only for a target whose
+  orchestrator is local.
 - **The browser does authenticate to this app's own gateway.**
   `src/lib/auth/gatewayAuth.ts`'s `assertGatewayAuthorized(request)` is
   called first by every route under `src/app/api/**` (including
@@ -269,11 +289,13 @@ build on every push and PR.
   imports `"server-only"` — `src/lib/location.ts`, `src/lib/format.ts`,
   `src/lib/http/exchange.ts`, `src/lib/validators.ts`, and
   `src/lib/auth/token.ts` have no server-only dependency and are
-  unit-tested under `__tests__/` alongside them. `src/lib/config.ts` and
-  `src/lib/auth/gatewayAuth.ts` both import `"server-only"` and will throw
-  if pulled into a Vitest run directly — `gatewayAuth.ts` is a thin wrapper
-  around `token.ts` for exactly this reason; `config.ts` is exercised via
-  `/api/config` instead.
+  unit-tested under `__tests__/` alongside them. `src/lib/config.ts`,
+  `src/lib/auth/gatewayAuth.ts` and `src/lib/auth/customerToken.ts` import
+  `"server-only"`. Under Vitest only, `vitest.config.mts` aliases it to
+  `tests/stubs/server-only.ts`, so server modules can be tested directly
+  (`src/app/api/_lib/__tests__/serviceProxy.test.ts` drives the real proxy
+  with `undici` mocked). The real guard still applies to every Next.js
+  build, so keep server-only code out of client imports regardless.
 - `src/lib/types.ts` holds `Target`/`Defaults`/`PublicTarget`/
   `PublicDefaults` with no dependencies, so client-side code can import the
   public shapes without pulling in `src/lib/config.ts`'s `server-only`

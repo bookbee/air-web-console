@@ -155,6 +155,47 @@ the JSON body entirely rather than sent at a default. The "Request body
 preview" on each tab shows exactly what will be sent, with nothing invented
 on the way.
 
+## Chatting as a customer
+
+air-orchestrator-service can serve a known customer rather than an anonymous
+one (its spec 0014): the customer channel accepts a short-lived **customer
+token**, an ES256 JWT naming the customer (`sub`) and the shop
+(`air_tenant`), in an `air-token` header beside the customer key. In a real
+integration the shop's own backend mints it after the shopper logs in. Here
+the console's BFF plays that backend:
+
+- The Orchestrator tab's **Customer** picker, on the chat route, offers
+  *Anonymous* plus the target's configured customers
+  (`ORCHESTRATOR_CUSTOMER_TOKEN_SUBJECTS`). The pick is remembered per target
+  for the tab session, and changing it starts a new session, because a
+  session belongs to the customer who started it.
+- The browser only *names* the customer (`X-Target-Customer`). The server
+  mints a new token for every request, and only for a customer that target
+  lists. A customer it doesn't list is refused with no upstream call; it is
+  never sent anonymously by mistake.
+- The response pane says who the call went as, for example "Sent as customer
+  cust_1001 (token minted by the console, expires in 10 min)". The token
+  itself is masked like `X-API-Key` everywhere: in the request headers, the
+  cURL and history.
+- Where the target's orchestrator is on this machine and test modes are on
+  (any `make dev` server, or `AIR_WEB__CUSTOMER_TOKEN_TEST_MODES=true`, which
+  `docker-compose.yml` sets), a **Token** select also offers *Expired*,
+  *Wrong tenant* and *Tampered*. The orchestrator should refuse each of them
+  with `401 invalid-customer-token`.
+
+The six `AIR_WEB__TARGETS__<NAME>__ORCHESTRATOR_CUSTOMER_TOKEN_*` fields
+(`PRIVATE_KEY`, `KID`, `ISSUER`, `TENANT`, `TTL_S`, `SUBJECTS`) configure it
+per target. Set all of them or none: a half-set block disables the picker on
+that target and says why. `.env.example` ships a **development-only** key
+pair's private half for `local`. Its public half lives in the orchestrator's
+own `.env.example`, so a fresh checkout works with zero edits.
+**An existing `.env.local` doesn't pick these up**: copy the
+`ORCHESTRATOR_CUSTOMER_TOKEN_*` lines across. `make customer-token-key`
+generates a new pair. It prints the private line for this console's
+`.env.local`, and the public key as PEM and JWK for the orchestrator. Every
+non-local environment needs its own pair. The private key is an upstream
+credential exactly like an API key, and is never sent to the browser.
+
 ## Layout
 
 ```text

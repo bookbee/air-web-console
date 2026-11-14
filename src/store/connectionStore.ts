@@ -22,8 +22,14 @@ interface ConnectionState {
   selectedTarget: string;
   timeoutSeconds: number;
   usdToInrRate: number;
+  /** The customer picked on each target's Orchestrator customer channel, by
+   * target name, so one target's customer is never carried to another. */
+  customerByTarget: Record<string, string>;
 
   hydrate: (defaults: PublicDefaults) => void;
+  /** Pick a customer for a target; "" is anonymous. Ignored for a subject
+   * the target doesn't list. */
+  setCustomer: (target: string, subject: string) => void;
   selectTarget: (name: string) => void;
   setTimeoutSeconds: (value: number) => void;
   setUsdToInrRate: (value: number) => void;
@@ -37,6 +43,7 @@ export const useConnectionStore = create<ConnectionState>()(
       selectedTarget: "local",
       timeoutSeconds: 60,
       usdToInrRate: 87,
+      customerByTarget: {},
 
       hydrate: (defaults) => {
         const alreadyHydrated = get().hydrated;
@@ -61,6 +68,12 @@ export const useConnectionStore = create<ConnectionState>()(
         set({ selectedTarget: name });
       },
 
+      setCustomer: (target, subject) => {
+        const offered = get().targets[target]?.orchestratorCustomerSubjects ?? [];
+        if (subject && !offered.includes(subject)) return;
+        set((state) => ({ customerByTarget: { ...state.customerByTarget, [target]: subject } }));
+      },
+
       setTimeoutSeconds: (value) => set({ timeoutSeconds: value }),
       setUsdToInrRate: (value) => set({ usdToInrRate: value }),
     }),
@@ -73,6 +86,7 @@ export const useConnectionStore = create<ConnectionState>()(
         selectedTarget: state.selectedTarget,
         timeoutSeconds: state.timeoutSeconds,
         usdToInrRate: state.usdToInrRate,
+        customerByTarget: state.customerByTarget,
         hydrated: state.hydrated,
       }),
     },
@@ -87,7 +101,17 @@ export interface Connections {
   rag: Connection;
 }
 
-type ConnectionFieldsSlice = Pick<ConnectionState, "targets" | "selectedTarget" | "timeoutSeconds">;
+type ConnectionFieldsSlice = Pick<ConnectionState, "targets" | "selectedTarget" | "timeoutSeconds"> &
+  Partial<Pick<ConnectionState, "customerByTarget">>;
+
+/** The customer to send for the selected target: its stored pick, if the
+ * target still offers tokens and still lists that customer. */
+export function customerFor(state: ConnectionFieldsSlice): string | undefined {
+  const target = state.targets[state.selectedTarget];
+  const picked = state.customerByTarget?.[state.selectedTarget];
+  if (!target?.orchestratorCustomerTokenConfigured || !picked) return undefined;
+  return target.orchestratorCustomerSubjects.includes(picked) ? picked : undefined;
+}
 
 /** The four Connection objects every tab and the target bar read from —
  * classifier, orchestrator (chat route/customer channel), orchestrator
@@ -117,6 +141,7 @@ export function buildConnections(state: ConnectionFieldsSlice): Connections {
       baseUrl: target?.orchestratorBaseUrl ?? "",
       authenticated: target?.orchestratorCustomerKeyed ?? false,
       channel: "customer",
+      customer: customerFor(state),
     },
     orchestratorQuery: {
       ...base,
@@ -147,9 +172,10 @@ export function useConnections(): Connections {
   const targets = useConnectionStore((state) => state.targets);
   const selectedTarget = useConnectionStore((state) => state.selectedTarget);
   const timeoutSeconds = useConnectionStore((state) => state.timeoutSeconds);
+  const customerByTarget = useConnectionStore((state) => state.customerByTarget);
 
   return useMemo(
-    () => buildConnections({ targets, selectedTarget, timeoutSeconds }),
-    [targets, selectedTarget, timeoutSeconds],
+    () => buildConnections({ targets, selectedTarget, timeoutSeconds, customerByTarget }),
+    [targets, selectedTarget, timeoutSeconds, customerByTarget],
   );
 }

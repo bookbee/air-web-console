@@ -18,6 +18,7 @@
  */
 import "server-only";
 
+import { reportConfigError, resolveCustomerToken, type CustomerTokenFields } from "./auth/customerToken";
 import { LOCAL_HOSTS, locationOf, type Location } from "./location";
 import type { Defaults, PublicDefaults, PublicTarget, Target } from "./types";
 
@@ -137,6 +138,11 @@ export function toPublicDefaults(defaults: Defaults): PublicDefaults {
       llmKeyed: target.llmApiKey.trim().length > 0,
       ragBaseUrl: target.ragBaseUrl,
       ragKeyed: target.ragApiKey.trim().length > 0,
+      orchestratorCustomerTokenConfigured: target.orchestratorCustomerToken !== null,
+      orchestratorCustomerSubjects: target.orchestratorCustomerToken?.subjects ?? [],
+      orchestratorCustomerTokenError: target.orchestratorCustomerTokenError,
+      orchestratorCustomerTokenTestModes:
+        target.orchestratorCustomerToken !== null && target.orchestratorCustomerTokenTestModes,
     };
   }
   return {
@@ -159,6 +165,12 @@ const TARGET_FIELDS = new Set([
   "LLM_API_KEY",
   "RAG_BASE_URL",
   "RAG_API_KEY",
+  "ORCHESTRATOR_CUSTOMER_TOKEN_PRIVATE_KEY",
+  "ORCHESTRATOR_CUSTOMER_TOKEN_KID",
+  "ORCHESTRATOR_CUSTOMER_TOKEN_ISSUER",
+  "ORCHESTRATOR_CUSTOMER_TOKEN_TENANT",
+  "ORCHESTRATOR_CUSTOMER_TOKEN_TTL_S",
+  "ORCHESTRATOR_CUSTOMER_TOKEN_SUBJECTS",
   "VERIFY_TLS",
 ]);
 
@@ -201,14 +213,49 @@ function collectDeclared(): Record<string, Record<string, string>> {
   return declared;
 }
 
+/** Whether the dev-only SIT token modes (expired, wrong tenant, tampered)
+ * may be applied on this target: never on a remote one, and only on a
+ * development server, or where the deployment opts in (the Docker image runs
+ * with NODE_ENV=production, so `docker-compose.yml` sets the flag). */
+function testModesAllowed(orchestratorBaseUrl: string): boolean {
+  const devServer = process.env.NODE_ENV !== "production" || getBool("CUSTOMER_TOKEN_TEST_MODES", false);
+  return devServer && locationOf(orchestratorBaseUrl) === "local";
+}
+
+/** A target's customer-token settings, resolved from its six fields. A
+ * half-configured target is reported once and offers no tokens. */
+function customerTokenFor(
+  name: string,
+  fields: Record<string, string>,
+  orchestratorBaseUrl: string,
+): Pick<Target, "orchestratorCustomerToken" | "orchestratorCustomerTokenError" | "orchestratorCustomerTokenTestModes"> {
+  const raw: CustomerTokenFields = {
+    privateKey: fields.ORCHESTRATOR_CUSTOMER_TOKEN_PRIVATE_KEY,
+    kid: fields.ORCHESTRATOR_CUSTOMER_TOKEN_KID,
+    issuer: fields.ORCHESTRATOR_CUSTOMER_TOKEN_ISSUER,
+    tenant: fields.ORCHESTRATOR_CUSTOMER_TOKEN_TENANT,
+    ttlSeconds: fields.ORCHESTRATOR_CUSTOMER_TOKEN_TTL_S,
+    subjects: fields.ORCHESTRATOR_CUSTOMER_TOKEN_SUBJECTS,
+  };
+  const resolved = resolveCustomerToken(raw);
+  if (resolved.kind === "error") reportConfigError(name, resolved.error);
+  return {
+    orchestratorCustomerToken: resolved.kind === "configured" ? resolved.config : null,
+    orchestratorCustomerTokenError: resolved.kind === "error" ? resolved.error : null,
+    orchestratorCustomerTokenTestModes: testModesAllowed(orchestratorBaseUrl),
+  };
+}
+
 function buildLocal(fields: Record<string, string>, defaultVerifyTls: boolean): Target {
   const defaults = LOCAL_TARGET_DEV_DEFAULTS;
+  const orchestratorBaseUrl =
+    fields.ORCHESTRATOR_BASE_URL || get("ORCHESTRATOR_BASE_URL", defaults.orchestratorBaseUrl);
   return {
     name: LOCAL_TARGET_NAME,
     label: fields.LABEL || "Local — services on this machine",
     classifierBaseUrl: fields.CLASSIFIER_BASE_URL || get("CLASSIFIER_BASE_URL", defaults.classifierBaseUrl),
     classifierApiKey: fields.CLASSIFIER_API_KEY || get("CLASSIFIER_API_KEY", defaults.classifierApiKey),
-    orchestratorBaseUrl: fields.ORCHESTRATOR_BASE_URL || get("ORCHESTRATOR_BASE_URL", defaults.orchestratorBaseUrl),
+    orchestratorBaseUrl,
     orchestratorCustomerKey:
       fields.ORCHESTRATOR_CUSTOMER_API_KEY ||
       get("ORCHESTRATOR_CUSTOMER_API_KEY", defaults.orchestratorCustomerKey),
@@ -219,6 +266,7 @@ function buildLocal(fields: Record<string, string>, defaultVerifyTls: boolean): 
     llmApiKey: fields.LLM_API_KEY || get("LLM_API_KEY", defaults.llmApiKey),
     ragBaseUrl: fields.RAG_BASE_URL || get("RAG_BASE_URL", defaults.ragBaseUrl),
     ragApiKey: fields.RAG_API_KEY || get("RAG_API_KEY", defaults.ragApiKey),
+    ...customerTokenFor(LOCAL_TARGET_NAME, fields, orchestratorBaseUrl),
     verifyTls: boolField(fields.VERIFY_TLS, defaultVerifyTls),
   };
 }
@@ -251,6 +299,7 @@ export function loadDefaults(): Defaults {
       llmApiKey: fields.LLM_API_KEY || "",
       ragBaseUrl: fields.RAG_BASE_URL || "",
       ragApiKey: fields.RAG_API_KEY || "",
+      ...customerTokenFor(name, fields, fields.ORCHESTRATOR_BASE_URL || ""),
       verifyTls: boolField(fields.VERIFY_TLS, defaultVerifyTls),
     };
   }

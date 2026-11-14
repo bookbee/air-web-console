@@ -6,14 +6,22 @@
  * from the `Exchange` JSON it already has.
  */
 
+/** The development customer token's header (air-orchestrator-service spec
+ * 0014, `REQ-CTK-001`), the name the platform's other applications already
+ * use. One constant, so a rename is one edit. */
+export const CUSTOMER_TOKEN_HEADER = "air-token";
+
 export const SECRET_HEADERS = new Set([
   "x-api-key",
+  CUSTOMER_TOKEN_HEADER,
   "authorization",
   "cookie",
   "proxy-authorization",
 ]);
 
 export const MASK = "••••••••";
+
+import type { CustomerTokenClaims } from "@/lib/customerTokenModes";
 
 export interface SseEvent {
   event?: string;
@@ -40,6 +48,9 @@ export interface Exchange {
    * body — see `events` instead. */
   isStream: boolean;
   events: SseEvent[];
+  /** Orchestrator customer channel only: who the BFF minted a customer token
+   * for. The non-secret claims, never the token. Absent: anonymous. */
+  customerToken?: CustomerTokenClaims;
 }
 
 export function exchangeOk(exchange: Exchange): boolean {
