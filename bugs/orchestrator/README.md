@@ -6,7 +6,7 @@ Process, statuses and severities are in [../README.md](../README.md).
 | | |
 |---|---|
 | **Build tested** | `air-orchestrator-service` @ `ee242e1` (clean), native `uvicorn --reload` on `:8081`, one worker |
-| **Fixes** | branch `feature/model-gateway-migration`: `1bacfe5` (OR-001), `616709b` (OR-002, OR-003), `4f05811` (OR-004 part 1, OR-005 a/b/c/e); not pushed; verified ~05:10 UTC |
+| **Fixes** | branch `feature/model-gateway-migration`: `1bacfe5` (OR-001), `616709b` (OR-002, OR-003), `4f05811` (OR-004 part 1, OR-005 a/b/c/e), `0cc6158` (design decisions, docs); not pushed; verified ~05:10 UTC |
 | **Dependencies** | air-model-gateway @ `1fa80de`, air-classifier-service @ `d151e5c`, air-infrastructure-service on `:8080`; session and cache backends `memory` |
 
 ## Index
@@ -16,7 +16,7 @@ Process, statuses and severities are in [../README.md](../README.md).
 | [OR-001](OR-001-card-numbers-not-masked.md) | High | verified | Card numbers aren't masked on input: stored and sent to the classifier, the gateway and the cloud LLM |
 | [OR-002](OR-002-turn-cost-ceiling-not-enforced.md) | High | verified | `options.max_cost_usd` doesn't cap a turn: 31× overspend reported `ok` |
 | [OR-003](OR-003-classifier-spend-invisible.md) | Medium | verified | Classify-stage spend left out of `usage`, uncapped, and allowed to use the whole deadline |
-| [OR-004](OR-004-unknown-session-and-proposal-silent.md) | Medium | part 1 verified · part 2 design (pending) | An unknown `session_id`/`proposal_id` is silently ignored with 200 |
+| [OR-004](OR-004-unknown-session-and-proposal-silent.md) | Medium | part 1 verified · part 2 wont-fix (design) | An unknown `session_id`/`proposal_id` is silently ignored with 200 |
 | [OR-005](OR-005-minor-items.md) | Low | verified (a,b,c,e) · d wont-fix | Minor: blank message billed, invalid `output_schema`, `allow_routes: []`, readiness, auth order |
 
 ## Test setup

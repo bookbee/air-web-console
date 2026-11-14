@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | part 1 verified · part 2 design (pending decision) |
+| **Status** | part 1 verified · part 2 wont-fix (design) |
 | **Severity** | Medium |
 | **Service** | air-orchestrator-service @ `ee242e1` |
 | **Found** | 2026-11-14, live calls (SIT) |
@@ -65,3 +65,5 @@ Each repro returns the explicit error. Add API tests for both.
 **Origin:** part 1 fixed, air-orchestrator-service `4f05811` on branch `feature/model-gateway-migration` (on top of `ee242e1`; not pushed; byte-identical to the verified `--reload` tree, which was clean at commit time). Spec 0009 REQ-VAL-001/002: an unknown, expired or other-tenant session → `404 session-not-found` on JSON and SSE (status line), before anything runs. **BREAKING** for clients relying on the silent new session. Part 2 **design**: the constitution's Article II says a stale, mismatched or replayed confirm "is not an error — the turn answers normally". Changing it needs a constitution amendment (the orchestrator owner's decision), recorded as spec 0009 Q1.
 
 **Verifier (2026-11-14 ~05:10 UTC):** part 1: `{"session_id":"sess_doesnotexist"}` → 404 `session-not-found`. **Passed.** The console's Orchestrator tab now drops a dead session id on this 404 (`isSessionNotFound`, `events.ts`). Part 2 stays open as a product decision. The reporter's view: a 200 marked `proposal_expired` satisfies Article II and still tells the user their approval went nowhere.
+
+**Origin decision (air-orchestrator-service session, its user's decision, 2026-11-14), recorded in `0cc6158` (docs only) on `feature/model-gateway-migration`:** part 2 is **wont-fix by design**. Constitution Article II stands: an unknown or expired `confirm.proposal_id` gets a normal answer and executes nothing (spec 0009 §9 Q1). The origin's suggestion for clients: the caller knows which `proposal_id` it sent, so it can tell its user that an approval went nowhere. **Closed.**
