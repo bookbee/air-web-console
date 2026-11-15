@@ -18,9 +18,13 @@ npm-debug.log*
 
 # Docs, bug reports and tests: not needed to build the app, and keeping them
 # out means a new bug report or test run doesn't force a full rebuild.
+# Unit tests must go with `tests/`: `next build` type-checks every .ts/.tsx
+# it is given, and the jest-dom matcher types (toBeInTheDocument …) come
+# from tests/setup.ts, so a __tests__ file without it fails the build.
 *.md
 bugs
 tests
+**/__tests__
 
 # Playwright/dev scratch — never meant to ship in an image.
 .walkthrough*.mjs
