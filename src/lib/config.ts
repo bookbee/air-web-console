@@ -20,6 +20,7 @@ import "server-only";
 
 import { reportConfigError, resolveCustomerToken, type CustomerTokenFields } from "./auth/customerToken";
 import { LOCAL_HOSTS, locationOf, type Location } from "./location";
+import type { ToolsScope } from "./toolsScope";
 import type { Defaults, PublicDefaults, PublicTarget, Target } from "./types";
 
 export type { Defaults, PublicDefaults, PublicTarget, Target };
@@ -41,8 +42,8 @@ export const LOCAL_TARGET_NAME = "local";
  * like any server calling another server would.
  *
  * The base URLs are the AIR port map (air-infra/README.md): 8081
- * air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway, 8087
- * air-rag-service. The keys are the
+ * air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway, 8084
+ * air-tools-gateway, 8087 air-rag-service. The keys are the
  * literal development tokens the sibling air-* services' own
  * `.env.example` files provision for local development — kept
  * byte-for-byte so a fresh checkout authenticates with zero edits on
@@ -61,6 +62,9 @@ const LOCAL_TARGET_DEV_DEFAULTS = {
   llmApiKey: "air-client-dev",
   ragBaseUrl: "http://127.0.0.1:8087",
   ragApiKey: "airr_local_dev_key",
+  toolsBaseUrl: "http://127.0.0.1:8084",
+  toolsReadApiKey: "airtg_read_local_dev",
+  toolsExecuteApiKey: "airtg_exec_local_dev",
 } as const;
 
 export const DEFAULT_USD_TO_INR_RATE = 87.0;
@@ -69,8 +73,10 @@ export type ServiceKind =
   | "air-classifier-service"
   | "air-orchestrator-service"
   | "air-model-gateway"
-  | "air-rag-service";
+  | "air-rag-service"
+  | "air-tools-gateway";
 export type OrchestratorChannel = "customer" | "business";
+export type { ToolsScope };
 
 export interface ResolvedService {
   baseUrl: string;
@@ -86,6 +92,7 @@ export function targetLocation(target: Target): Location {
     locationOf(target.orchestratorBaseUrl),
     locationOf(target.llmBaseUrl),
     locationOf(target.ragBaseUrl),
+    locationOf(target.toolsBaseUrl),
   ]);
   if (legs.has("remote")) return "remote";
   if (legs.has("local")) return "local";
@@ -102,6 +109,7 @@ export function resolveService(
   targetName: string,
   service: ServiceKind,
   channel?: OrchestratorChannel,
+  toolsScope: ToolsScope = "read",
 ): ResolvedService {
   const target = defaults.targets[targetName] ?? defaults.targets[defaults.selected];
   if (service === "air-classifier-service") {
@@ -112,6 +120,16 @@ export function resolveService(
   }
   if (service === "air-rag-service") {
     return { baseUrl: target.ragBaseUrl, apiKey: target.ragApiKey, verifyTls: target.verifyTls };
+  }
+  if (service === "air-tools-gateway") {
+    // The scope comes from the route being called (`toolsScopeFor`), never
+    // from a client header: execute gets the execute key, everything else
+    // the read key, exactly as the gateway's two key scopes divide them.
+    return {
+      baseUrl: target.toolsBaseUrl,
+      apiKey: toolsScope === "execute" ? target.toolsExecuteApiKey : target.toolsReadApiKey,
+      verifyTls: target.verifyTls,
+    };
   }
   return {
     baseUrl: target.orchestratorBaseUrl,
@@ -138,6 +156,9 @@ export function toPublicDefaults(defaults: Defaults): PublicDefaults {
       llmKeyed: target.llmApiKey.trim().length > 0,
       ragBaseUrl: target.ragBaseUrl,
       ragKeyed: target.ragApiKey.trim().length > 0,
+      toolsBaseUrl: target.toolsBaseUrl,
+      toolsReadKeyed: target.toolsReadApiKey.trim().length > 0,
+      toolsExecuteKeyed: target.toolsExecuteApiKey.trim().length > 0,
       orchestratorCustomerTokenConfigured: target.orchestratorCustomerToken !== null,
       orchestratorCustomerSubjects: target.orchestratorCustomerToken?.subjects ?? [],
       orchestratorCustomerTokenError: target.orchestratorCustomerTokenError,
@@ -165,6 +186,9 @@ const TARGET_FIELDS = new Set([
   "LLM_API_KEY",
   "RAG_BASE_URL",
   "RAG_API_KEY",
+  "TOOLS_BASE_URL",
+  "TOOLS_READ_API_KEY",
+  "TOOLS_EXECUTE_API_KEY",
   "ORCHESTRATOR_CUSTOMER_TOKEN_PRIVATE_KEY",
   "ORCHESTRATOR_CUSTOMER_TOKEN_KID",
   "ORCHESTRATOR_CUSTOMER_TOKEN_ISSUER",
@@ -266,6 +290,9 @@ function buildLocal(fields: Record<string, string>, defaultVerifyTls: boolean): 
     llmApiKey: fields.LLM_API_KEY || get("LLM_API_KEY", defaults.llmApiKey),
     ragBaseUrl: fields.RAG_BASE_URL || get("RAG_BASE_URL", defaults.ragBaseUrl),
     ragApiKey: fields.RAG_API_KEY || get("RAG_API_KEY", defaults.ragApiKey),
+    toolsBaseUrl: fields.TOOLS_BASE_URL || get("TOOLS_BASE_URL", defaults.toolsBaseUrl),
+    toolsReadApiKey: fields.TOOLS_READ_API_KEY || get("TOOLS_READ_API_KEY", defaults.toolsReadApiKey),
+    toolsExecuteApiKey: fields.TOOLS_EXECUTE_API_KEY || get("TOOLS_EXECUTE_API_KEY", defaults.toolsExecuteApiKey),
     ...customerTokenFor(LOCAL_TARGET_NAME, fields, orchestratorBaseUrl),
     verifyTls: boolField(fields.VERIFY_TLS, defaultVerifyTls),
   };
@@ -299,6 +326,9 @@ export function loadDefaults(): Defaults {
       llmApiKey: fields.LLM_API_KEY || "",
       ragBaseUrl: fields.RAG_BASE_URL || "",
       ragApiKey: fields.RAG_API_KEY || "",
+      toolsBaseUrl: fields.TOOLS_BASE_URL || "",
+      toolsReadApiKey: fields.TOOLS_READ_API_KEY || "",
+      toolsExecuteApiKey: fields.TOOLS_EXECUTE_API_KEY || "",
       ...customerTokenFor(name, fields, fields.ORCHESTRATOR_BASE_URL || ""),
       verifyTls: boolField(fields.VERIFY_TLS, defaultVerifyTls),
     };

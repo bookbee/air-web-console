@@ -20,10 +20,15 @@ fourth variant.
 air-web-console is a Next.js (App Router) console for hand-testing,
 integrating with, and evaluating the AIR platform services —
 **air-classifier-service**, **air-orchestrator-service**, **air-model-gateway**,
-**air-rag-service** — individually and as an integrated whole, against any
+**air-rag-service**, **air-tools-gateway** — individually and as an integrated whole, against any
 environment (local/QA/staging). air-rag-service is read-only retrieval
 (`POST /v1/retrieve`, citations out) whose tenant comes from its key alone;
 its tab is "RAG" (`src/components/rag/`, `/api/rag`, `RAG_*` env keys).
+air-tools-gateway runs declared business capabilities (reads at
+`/v1/tools/{name}`, writes behind `/v1/actions/{name}/propose` then
+`/execute`); its tab is "Tools Gateway" (`src/components/tools/`,
+`/api/tools`, `TOOLS_*` env keys), and there the console plays the
+orchestrator, its only real caller.
 air-model-gateway is the service formerly called air-llm. Its display name
 and `ServiceKind` literal say `air-model-gateway`, but identifier-shaped
 names users already depend on keep `llm`: the `/api/llm` proxy route, the
@@ -55,8 +60,9 @@ build, so `make check` alone doesn't catch build-only failures.
 **Configuration** is all `AIR_WEB__`-prefixed env vars, parsed by
 `src/lib/config.ts`'s `loadDefaults()`. Targets are discovered dynamically:
 any `AIR_WEB__TARGETS__<NAME>__<FIELD>` defines target `<name>` (fields:
-`LABEL`, `{CLASSIFIER,ORCHESTRATOR,LLM,RAG}_BASE_URL`, `CLASSIFIER_API_KEY`,
+`LABEL`, `{CLASSIFIER,ORCHESTRATOR,LLM,RAG,TOOLS}_BASE_URL`, `CLASSIFIER_API_KEY`,
 `ORCHESTRATOR_{CUSTOMER,BUSINESS}_API_KEY`, `LLM_API_KEY`, `RAG_API_KEY`,
+`TOOLS_{READ,EXECUTE}_API_KEY`,
 `VERIFY_TLS`, and the customer-token six
 `ORCHESTRATOR_CUSTOMER_TOKEN_{PRIVATE_KEY,KID,ISSUER,TENANT,TTL_S,SUBJECTS}`) —
 adding an environment is an `.env.local` edit plus a restart, never a code
@@ -141,9 +147,9 @@ through an unauthenticated `GET /api/config`. The fix, now in place:
 
 **One Next.js app is both the frontend and the BFF.** `src/app/api/**` are
 Route Handlers acting as the proxy; everything else under `src/app`/
-`src/components` is the console UI. Four catch-all routes —
+`src/components` is the console UI. Five catch-all routes —
 `api/classifier/[...path]`, `api/orchestrator/[...path]`, `api/llm/[...path]`,
-`api/rag/[...path]` —
+`api/rag/[...path]`, `api/tools/[...path]` —
 each pass their own `ServiceKind` literal into the one shared handler,
 `src/app/api/_lib/serviceProxy.ts`, built on `src/lib/http/proxy.ts`'s
 `forwardRequest`/`forwardStreamRequest`. Those two functions are the only
@@ -223,7 +229,7 @@ with default values — it changes what the real API sees.
 `Dockerfile`/`docker-compose.yml` exist so a developer with no Node
 toolchain can still `make up`. Inside the container `localhost` means the
 container, so `docker-compose.yml`'s `environment:` block re-points the
-`local` target's four base URLs at `host.docker.internal` (with
+`local` target's five base URLs at `host.docker.internal` (with
 `extra_hosts: host.docker.internal:host-gateway` for Linux) — verified
 end-to-end against a host-run air-classifier-service. `next.config.ts`'s `output:
 "standalone"` is what makes the runtime image copy only a traced
@@ -284,6 +290,29 @@ build on every push and PR.
   sends those straight to the service, like that repo's `sit_check.py`. Don't
   add a client header to the BFF to make them browser-runnable: that would
   let the browser choose what credential is sent.
+- `make tools-check` is the same for air-tools-gateway
+  (`src/components/tools/data.ts`, report `bugs/tools-gateway/last-run-<target>.txt`).
+  Its rows are *simulations*: several steps sharing a context (a propose's
+  `proposal_id` feeds the execute; a replay is compared byte for byte), run
+  by the pure `runSimulation(simulation, send, ctx)` so the UI and the live
+  test judge identically. Fixture checks use `src/components/tools/fixtures/`,
+  verbatim copies of the gateway's `fixtures/<tenant>/orders.json` (the run
+  reports drift), and apply only to a local target. Three rules to keep:
+  - **The BFF picks the tools key from the route** (`src/lib/toolsScope.ts`'s
+    `toolsScopeFor`: execute → execute key, everything else → read key). No
+    client header selects it, so scope-mismatch rows (403) are headless.
+  - **No execute key, no execute.** `serviceProxy.ts` refuses execute on a
+    target without `TOOLS_EXECUTE_API_KEY`, with no upstream call; on a remote
+    target the UI asks first (`ConfirmWrite`), and Run all skips `mutates` rows.
+    `Idempotency-Key` is the one client header passed through (tools only,
+    bounded to 256 visible-ASCII characters), because the gateway's own
+    validation of it is under test.
+  - **A 404 from execute needs a control step.** A route the gateway doesn't
+    serve also answers `404 not_found`, so any simulation expecting a 404
+    from execute starts with `EXECUTE_SERVED` (no Idempotency-Key must be a
+    400). Without it those rows passed against a gateway with no execute.
+  The conversation rows execute real cancellations: on fixtures they use up
+  55120 and 70011 until the gateway restarts, and later runs skip them.
 
 - Pure/testable logic lives deliberately separated from anything that
   imports `"server-only"` — `src/lib/location.ts`, `src/lib/format.ts`,

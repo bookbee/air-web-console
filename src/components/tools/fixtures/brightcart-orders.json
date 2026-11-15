@@ -1,0 +1,90 @@
+{
+  "orders": [
+    {
+      "order_id": "48213",
+      "customer_id": "cust_1001",
+      "placed_at": "2026-10-30",
+      "status": "in_transit",
+      "total": { "amount": "1899.00", "currency": "INR" },
+      "expected_delivery": "2026-11-16",
+      "items": [
+        {
+          "name": "Steel water bottle, 1 L",
+          "qty": 2,
+          "price": { "amount": "499.00", "currency": "INR" }
+        },
+        {
+          "name": "Insulated lunch box",
+          "qty": 1,
+          "price": { "amount": "901.00", "currency": "INR" }
+        }
+      ],
+      "tracking": {
+        "carrier": "BlueDart",
+        "status": "in_transit",
+        "last_update": "2026-11-14T08:30:00Z"
+      },
+      "returnable": false
+    },
+    {
+      "order_id": "55120",
+      "customer_id": "cust_1001",
+      "placed_at": "2026-11-12",
+      "status": "confirmed",
+      "total": { "amount": "1240.00", "currency": "INR" },
+      "expected_delivery": "2026-11-18",
+      "items": [
+        {
+          "name": "Cotton bath towel set",
+          "qty": 1,
+          "price": { "amount": "1240.00", "currency": "INR" }
+        }
+      ],
+      "tracking": null,
+      "returnable": false
+    },
+    {
+      "order_id": "61007",
+      "customer_id": "cust_1001",
+      "placed_at": "2026-10-18",
+      "status": "delivered",
+      "total": { "amount": "649.00", "currency": "INR" },
+      "expected_delivery": "2026-10-22",
+      "items": [
+        {
+          "name": "Ceramic coffee mug, pack of 2",
+          "qty": 1,
+          "price": { "amount": "649.00", "currency": "INR" }
+        }
+      ],
+      "tracking": {
+        "carrier": "Delhivery",
+        "status": "delivered",
+        "last_update": "2026-10-22T14:05:00Z"
+      },
+      "returnable": true
+    },
+    {
+      "order_id": "70011",
+      "customer_id": "cust_1002",
+      "placed_at": "2026-11-13",
+      "status": "packed",
+      "total": { "amount": "2310.00", "currency": "INR" },
+      "expected_delivery": "2026-11-19",
+      "items": [
+        {
+          "name": "Non-stick frying pan, 28 cm",
+          "qty": 1,
+          "price": { "amount": "1450.00", "currency": "INR" }
+        },
+        {
+          "name": "Silicone spatula set",
+          "qty": 2,
+          "price": { "amount": "430.00", "currency": "INR" }
+        }
+      ],
+      "tracking": null,
+      "returnable": false
+    }
+  ]
+}

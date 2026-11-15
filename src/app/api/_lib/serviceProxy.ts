@@ -1,6 +1,7 @@
 /**
- * Shared handler behind the four catch-all proxy routes
- * (`/api/classifier/**`, `/api/orchestrator/**`, `/api/llm/**`, `/api/rag/**`). Each route.ts
+ * Shared handler behind the five catch-all proxy routes
+ * (`/api/classifier/**`, `/api/orchestrator/**`, `/api/llm/**`, `/api/rag/**`,
+ * `/api/tools/**`). Each route.ts
  * is a two-line wrapper around this — every tab's request goes through the
  * same one transport, whichever service it targets.
  *
@@ -29,6 +30,13 @@
  * token for it (`lib/auth/customerToken.ts`) only when the target lists that
  * customer, and sends it as `air-token`; the Exchange carries the token's
  * display claims, never the token.
+ *
+ * For air-tools-gateway the key's *scope* comes from the route: execute gets
+ * the target's execute key, every other route its read key
+ * (`lib/toolsScope.ts`). A target with no execute key refuses execute here,
+ * with no upstream call: configuring that key is the opt-in to real writes.
+ * The client's `Idempotency-Key` is the one header passed through, to that
+ * service only.
  */
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -46,6 +54,7 @@ import {
   type LiveLine,
 } from "@/lib/http/live";
 import { forwardRequest, forwardStreamRequest, type ForwardOptions } from "@/lib/http/proxy";
+import { forwardedIdempotencyKey, IDEMPOTENCY_HEADER, toolsScopeFor } from "@/lib/toolsScope";
 
 const MIN_TIMEOUT_SECONDS = 1;
 const MAX_TIMEOUT_SECONDS = 120;
@@ -169,7 +178,8 @@ export async function handleServiceProxy(
 
   const defaults = loadDefaults();
   const resolvedTargetName = targetName in defaults.targets ? targetName : defaults.selected;
-  const { baseUrl, apiKey, verifyTls } = resolveService(defaults, resolvedTargetName, service, channel);
+  const toolsScope = service === "air-tools-gateway" ? toolsScopeFor(pathSegments) : undefined;
+  const { baseUrl, apiKey, verifyTls } = resolveService(defaults, resolvedTargetName, service, channel, toolsScope);
 
   const safePath = upstreamPath(pathSegments);
   if (safePath === null) {
@@ -207,6 +217,22 @@ export async function handleServiceProxy(
   const customer = await customerTokenFor(request, defaults.targets[resolvedTargetName], service, channel);
   if (customer.error) return NextResponse.json(emptyExchange(request.method, path, customer.error));
 
+  let idempotencyKey: string | undefined;
+  if (service === "air-tools-gateway") {
+    if (toolsScope === "execute" && !apiKey.trim()) {
+      return NextResponse.json(
+        emptyExchange(
+          request.method,
+          path,
+          "Refused: this target has no tools-gateway execute key configured, so the console can't execute on it.",
+        ),
+      );
+    }
+    const forwarded = forwardedIdempotencyKey(request.headers.get(IDEMPOTENCY_HEADER));
+    if (forwarded.error) return NextResponse.json(emptyExchange(request.method, path, forwarded.error));
+    idempotencyKey = forwarded.value;
+  }
+
   const wantsStream = (request.headers.get("accept") ?? "").includes("text/event-stream");
   const options: ForwardOptions = {
     method: request.method,
@@ -216,6 +242,7 @@ export async function handleServiceProxy(
     verifyTls,
     body,
     customerToken: customer.token,
+    idempotencyKey,
   };
   if (wantsStream && request.headers.get(LIVE_STREAM_HEADER) === LIVE_STREAM_VALUE) {
     return liveStream(request, options, customer.claims);

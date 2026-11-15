@@ -36,7 +36,7 @@ services:
       # is therefore re-pointed at the Docker host, so "local" keeps meaning
       # "the services on my laptop" rather than silently meaning nothing —
       # verified end-to-end against air-classifier-service on :8082. `environment:`
-      # wins over `env_file:` below, so these four stay pointed at the host
+      # wins over `env_file:` below, so these five stay pointed at the host
       # whatever the file says.
       AIR_WEB__TARGET: local
       AIR_WEB__TARGETS__LOCAL__LABEL: Local — services on the Docker host
@@ -44,6 +44,7 @@ services:
       AIR_WEB__TARGETS__LOCAL__ORCHESTRATOR_BASE_URL: http://host.docker.internal:8081
       AIR_WEB__TARGETS__LOCAL__LLM_BASE_URL: http://host.docker.internal:8083
       AIR_WEB__TARGETS__LOCAL__RAG_BASE_URL: http://host.docker.internal:8087
+      AIR_WEB__TARGETS__LOCAL__TOOLS_BASE_URL: http://host.docker.internal:8084
       # The image is a production build, so the customer-token SIT test modes
       # need the opt-in. They still appear only for the local target.
       AIR_WEB__CUSTOMER_TOKEN_TEST_MODES: "true"
