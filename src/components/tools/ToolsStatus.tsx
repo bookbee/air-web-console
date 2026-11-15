@@ -60,7 +60,7 @@ export function ToolsStatus({
     [
       {
         label: "capabilities",
-        value: inventory ? inventory.capabilities.map((c) => `${c.name} (${c.kind}${c.risk ? `, ${c.risk}` : ""})`).join(" · ") : (capsError ?? "…"),
+        value: inventory && Array.isArray(inventory.capabilities) ? inventory.capabilities.map((c) => `${c.name} (${c.kind}${c.risk ? `, ${c.risk}` : ""})`).join(" · ") : (capsError ?? "…"),
         kind: capsError ? "warn" : contract ? "err" : undefined,
       },
     ],

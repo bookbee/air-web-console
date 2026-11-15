@@ -16,14 +16,16 @@ same shape a real production integration should follow, not a shortcut
 specific to this tool. Built on Next.js/React/Node so web developers can
 pick it up and extend it directly.
 
-Four tabs, one per surface:
+Six tabs, one per surface:
 
 | Tab | Service | What it does |
 | --- | --- | --- |
 | **Classifier** | air-classifier-service | `/v1/classify` (single, batch, tier probes) and `/v1/summary/refresh` (stateless customer-summary rollup) |
 | **Orchestrator** | air-orchestrator-service | Both channels: `/v1/chat` and `/v1/query`, including SSE turns |
 | **Model Gateway** | air-model-gateway | `/v1/generate` (text, structured, streamed) and `/v1/embed` |
-| **System** | all three | Health, readiness, capabilities, and a log of every call |
+| **RAG** | air-rag-service | `/v1/retrieve` (read-only retrieval with citations), contract and SIT scenarios |
+| **Tools Gateway** | air-tools-gateway | `/v1/tools/{name}` lookups and `/v1/actions/{name}/propose` → `/execute` changes, with orchestrator-style simulations |
+| **System** | all of them | Health, readiness, capabilities, and a log of every call |
 
 ## Quickstart
 
@@ -36,7 +38,7 @@ make dev         # http://127.0.0.1:3000
 The demo gateway token and the `local` target both work as shipped — a
 fresh checkout needs no edits to run against sibling AIR services on their
 default ports (8081 air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway,
-8087 air-rag-service).
+8084 air-tools-gateway, 8087 air-rag-service).
 
 ### Two ways to run it
 
@@ -154,6 +156,41 @@ tab's form has its own enable checkbox, and an unticked one is omitted from
 the JSON body entirely rather than sent at a default. The "Request body
 preview" on each tab shows exactly what will be sent, with nothing invented
 on the way.
+
+## Testing the tools gateway
+
+air-tools-gateway runs the platform's declared business capabilities:
+lookups (`orders.list_recent`, `orders.get`) and changes (`orders.cancel`)
+behind *propose* (checks and prices, changes nothing) then *execute*. Its
+only real caller is air-orchestrator-service, so the **Tools Gateway** tab
+plays the orchestrator:
+
+- **Keys come from the route, not the browser.** Each gateway tenant has a
+  `read` key (capabilities, tools, propose) and an `execute` key (execute
+  only). The BFF attaches the right one for the path being called
+  (`TOOLS_READ_API_KEY` / `TOOLS_EXECUTE_API_KEY`). The tenant comes from the
+  key; the body carries the `subject` the orchestrator would have verified.
+- **Execute is opt-in per target.** A target with no execute key gets no
+  execute at all: the BFF refuses it before any call. On a **remote** target
+  the console asks before every execute, and **Run all** leaves the writes
+  out, because there execute changes that environment's real data.
+- **The form:** pick a capability (read live from `GET /v1/capabilities`),
+  a subject, and arguments sent exactly as written. **Confirm** turns the
+  last proposal into an execute with a fresh `Idempotency-Key`; untick the
+  key to send none.
+- **Simulations** are orchestrator turns and guardrails, one or more steps
+  each: "Cancel my last order" end to end (propose, nothing changed,
+  execute, byte-identical replay, `already_executed`), two confirms at once,
+  another customer's order as the same 404 as a missing one, and every
+  rejection. Every answer is also checked for problem+json, a clean
+  `detail`, an echoed `X-Request-ID` and, in fixture mode, only the
+  subject's own orders. `make tools-check` runs them all headless, including
+  the rows that need a chosen key (no key, the wrong scope, another
+  tenant's), and writes `bugs/tools-gateway/last-run-<target>.txt`.
+
+The conversation simulations execute real cancellations. Against a
+fixture-mode gateway they use up orders 55120 and 70011 until it restarts;
+later runs skip them and say so.
 
 ## Chatting as a customer
 

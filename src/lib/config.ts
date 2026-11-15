@@ -42,8 +42,8 @@ export const LOCAL_TARGET_NAME = "local";
  * like any server calling another server would.
  *
  * The base URLs are the AIR port map (air-infra/README.md): 8081
- * air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway, 8087
- * air-rag-service. The keys are the
+ * air-orchestrator-service, 8082 air-classifier-service, 8083 air-model-gateway, 8084
+ * air-tools-gateway, 8087 air-rag-service. The keys are the
  * literal development tokens the sibling air-* services' own
  * `.env.example` files provision for local development — kept
  * byte-for-byte so a fresh checkout authenticates with zero edits on

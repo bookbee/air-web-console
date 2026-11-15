@@ -1093,7 +1093,8 @@ export function freshIdempotencyKey(random: () => string = () => Math.random().t
  * when there is one, else the v1 names (so a gateway that won't list still
  * gets a form, and its own answer says why). */
 export function capabilitiesFor(inventory: Inventory | null, kind: Kind): Capability[] {
-  const live = (inventory?.capabilities ?? []).filter((c) => c.kind === kind);
+  // A 200 that isn't an inventory is the gateway's bug to report, not a crash.
+  const live = (Array.isArray(inventory?.capabilities) ? inventory.capabilities : []).filter((c) => c?.kind === kind);
   if (live.length) return live;
   const fallback: Capability[] = [
     { name: "orders.list_recent", kind: "read", version: 1, description: "", requires_subject: true, input_schema: { type: "object", additionalProperties: false, properties: { limit: { type: "integer", minimum: 1, maximum: 10, default: 5 } } } },

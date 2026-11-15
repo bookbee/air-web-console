@@ -1,4 +1,4 @@
-air-tools-gateway simulation run · 2026-11-14T18:46:20.786Z
+air-tools-gateway simulation run · 2026-11-14T20:22:20.375Z
 console http://host.docker.internal:3001 · target local · gateway http://host.docker.internal:8084 · direct http://host.docker.internal:8084
 health {"status":"ok"} · fixture checks on · writes on
 fixtures match ../air-tools-gateway/fixtures
@@ -21,18 +21,18 @@ PASS    rejections             null-subject             bff    [400]
 PASS    rejections             tenant-in-envelope       bff    [400]
 PASS    rejections             subject-in-arguments     bff    [400]
 PASS    rejections             shipped                  bff    [422,422]
-FAIL    execute                execute-no-key           bff    [404]  step 1 · execute, no Idempotency-Key: got 404 not_found "No such endpoint."
-FAIL    execute                execute-short-key        bff    [404]  step 1 · execute, 15-character key: got 404 not_found "No such endpoint."
-PASS    execute                execute-unknown          bff    [404]
-PASS    execute                execute-wrong-subject    bff    [200,404,200]
+PASS    execute                execute-no-key           bff    [400]
+PASS    execute                execute-short-key        bff    [400]
+PASS    execute                execute-unknown          bff    [400,404]
+PASS    execute                execute-wrong-subject    bff    [400,200,404,200]
 PASS    headless               no-key                   direct [401]
 PASS    headless               bad-key                  direct [401]
 PASS    headless               execute-key-reads        direct [403,403,403]
-FAIL    headless               read-key-executes        direct [404]  step 1 · execute with the read key: got 404 not_found "No such endpoint."
+PASS    headless               read-key-executes        direct [403]
 PASS    headless               malformed-json           direct [400]
 PASS    headless               cross-tenant             direct [200,404,200]
-PASS    headless               cross-tenant-proposal    direct [200,404]
-FAIL    conversations          cancel-last-order        bff    [200,200,200,404]  step 4 · turn 2 · confirm: execute: got 404 not_found "No such endpoint."
-FAIL    conversations          double-confirm           bff    [200,404,404]  step 2 · two executes, sent together: got 404 not_found "No such endpoint."
+PASS    headless               cross-tenant-proposal    direct [400,200,404]
+PASS    conversations          cancel-last-order        bff    [200,200,200,200,200,409,200,422]
+PASS    conversations          double-confirm           bff    [200,200,409,200]
 
-contract 26/31 passed · skipped 0 · known gaps open 0
+contract 31/31 passed · skipped 0 · known gaps open 0
