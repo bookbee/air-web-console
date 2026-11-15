@@ -44,7 +44,7 @@ import { assertGatewayAuthorized } from "@/lib/auth/gatewayAuth";
 import { upstreamPath } from "@/lib/http/upstreamPath";
 import { displayClaims, mintCustomerToken } from "@/lib/auth/customerToken";
 import { loadDefaults, resolveService, type OrchestratorChannel, type ServiceKind, type Target } from "@/lib/config";
-import { parseMode, type CustomerTokenClaims } from "@/lib/customerTokenModes";
+import { CUSTOMER_TOKEN_MODES, parseMode, type CustomerTokenClaims } from "@/lib/customerTokenModes";
 import { displayHeaders, type Exchange } from "@/lib/http/exchange";
 import {
   encodeLiveLine,
@@ -116,7 +116,17 @@ async function customerTokenFor(
   const config = target.orchestratorCustomerToken;
   if (!config) return { error: "Refused: this target has no customer token configured, so it can't act as a customer." };
   if (!config.subjects.includes(subject)) return { error: "Refused: customer not configured for this target." };
-  const mode = target.orchestratorCustomerTokenTestModes ? parseMode(request.headers.get(CUSTOMER_TOKEN_MODE_HEADER)) : "valid";
+  // A named test mode is honoured or refused, never quietly swapped for a
+  // valid token: a tester who asked for "expired" must not see a 200 and
+  // believe the orchestrator accepted an expired token.
+  const requested = (request.headers.get(CUSTOMER_TOKEN_MODE_HEADER) ?? "").trim();
+  const mode = parseMode(requested);
+  if (requested && mode !== requested) {
+    return { error: `Refused: unknown customer-token test mode "${requested.slice(0, 40)}" (one of ${CUSTOMER_TOKEN_MODES.join(", ")}).` };
+  }
+  if (mode !== "valid" && !target.orchestratorCustomerTokenTestModes) {
+    return { error: `Refused: customer-token test modes are off for this target, so no "${mode}" token was sent.` };
+  }
   const token = await mintCustomerToken(config, subject, Date.now(), mode);
   return { token, claims: displayClaims(token, mode) };
 }

@@ -171,14 +171,23 @@ describe("the proxy", () => {
     expect(exchange.customerToken?.sub).toBe("cust_1001");
   });
 
-  it("applies test modes where allowed, and ignores them (and unknown values) elsewhere", async () => {
+  it("applies test modes where allowed, and refuses unknown ones and disallowed ones, never sending a valid token instead", async () => {
     await send({ customer: "cust_1001", mode: "wrong-tenant" });
     expect(decodeJwt(upstreamHeaders()["air-token"]).air_tenant).toBe("othershop");
-    await send({ customer: "cust_1001", mode: "something-else" });
+    await send({ customer: "cust_1001", mode: "valid" });
     expect((await verify(upstreamHeaders()["air-token"])).payload.air_tenant).toBe("brightcart");
 
+    fetchMock.mockClear();
+    const unknown = await send({ customer: "cust_1001", mode: "wrong_tenant" });
+    expect(unknown.exchange.error).toMatch(/unknown customer-token test mode "wrong_tenant"/);
+    expect(fetchMock).not.toHaveBeenCalled();
+
     vi.stubEnv("NODE_ENV", "production");
-    const { exchange } = await send({ customer: "cust_1001", mode: "expired" });
+    const off = await send({ customer: "cust_1001", mode: "expired" });
+    expect(off.exchange.error).toMatch(/test modes are off/);
+    expect(off.exchange.requestHeaders["air-token"]).toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
+    const { exchange } = await send({ customer: "cust_1001" });
     await expect(verify(upstreamHeaders()["air-token"])).resolves.toBeTruthy();
     expect(exchange.customerToken?.mode).toBe("valid");
   });

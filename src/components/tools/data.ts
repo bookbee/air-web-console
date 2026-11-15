@@ -118,6 +118,8 @@ export const FIXTURES: Record<Tenant, readonly FixtureOrder[]> = {
 export const CUSTOMER = "cust_1001";
 export const OTHER_CUSTOMER = "cust_1002";
 export const OTHERSHOP_CUSTOMER = "cust_2001";
+/** Seven orders, one per status (and both kinds of delivered): more than limit 5. */
+export const MANY_ORDERS_CUSTOMER = "cust_1003";
 /** Never in any fixture: "missing" for the not-yours comparison. */
 export const MISSING_ORDER = "99999";
 
@@ -568,6 +570,73 @@ export const SIMULATIONS: readonly Simulation[] = [
       status: 200,
       check: (b) => all(expect(orders(b).length === 1, `${orders(b).length} orders`), expect(orders(b)[0]?.order_id === "55120", `newest is ${str(orders(b)[0]?.order_id)}, not 55120`)),
     }),
+  },
+  {
+    id: "recent-truncated",
+    group: "reads",
+    label: "More orders than the limit says truncated",
+    note: "cust_1003 has seven orders. Limit 5 gives the newest five (80101–80105) with truncated: true; limit 10 gives all seven with truncated: false, so the orchestrator knows when to say there are more.",
+    fixture: true,
+    steps: [
+      {
+        id: "five",
+        label: "orders.list_recent limit 5 as cust_1003",
+        request: () => tool("orders.list_recent", { limit: 5 }, MANY_ORDERS_CUSTOMER),
+        expected: {
+          status: 200,
+          check: (b) => {
+            const ids = orders(b).map((o) => str(o.order_id)).join(",");
+            return all(expect(ids === "80101,80102,80103,80104,80105", `orders ${ids || "none (is cust_1003 in this gateway's fixtures?)"}, not 80101–80105`), expect(b.truncated === true, `truncated ${String(b.truncated)} with 7 orders and limit 5`));
+          },
+        },
+      },
+      {
+        id: "ten",
+        label: "orders.list_recent limit 10 as cust_1003",
+        request: () => tool("orders.list_recent", { limit: 10 }, MANY_ORDERS_CUSTOMER),
+        expected: {
+          status: 200,
+          check: (b) => all(expect(orders(b).length === 7, `${orders(b).length} orders, not 7`), expect(b.truncated === false, `truncated ${String(b.truncated)} with everything returned`)),
+        },
+      },
+    ],
+  },
+  {
+    id: "flags-by-status",
+    group: "reads",
+    label: "cancellable and returnable follow the status",
+    note: "cust_1003's seven orders cover every status. In the list, only confirmed and packed are cancellable. In the detail, delivered 80106 can be returned and delivered 80107 can't.",
+    fixture: true,
+    steps: [
+      {
+        id: "list",
+        label: "orders.list_recent limit 10 as cust_1003",
+        request: () => tool("orders.list_recent", { limit: 10 }, MANY_ORDERS_CUSTOMER),
+        expected: {
+          status: 200,
+          check: (b) => {
+            const want: Record<string, boolean> = { "80101": true, "80102": true, "80103": true, "80104": false, "80105": false, "80106": false, "80107": false };
+            const byId = Object.fromEntries(orders(b).map((o) => [str(o.order_id), o]));
+            const wrong = Object.entries(want)
+              .filter(([id, c]) => byId[id]?.cancellable !== c)
+              .map(([id, c]) => `${id} (${str(byId[id]?.status)}) cancellable ${String(byId[id]?.cancellable)}, not ${c}`);
+            return expect(wrong.length === 0, wrong.join("; "));
+          },
+        },
+      },
+      {
+        id: "returnable",
+        label: "orders.get 80106 (delivered, returnable)",
+        request: () => tool("orders.get", { order_id: "80106" }, MANY_ORDERS_CUSTOMER),
+        expected: { status: 200, check: (b) => all(expect(order(b).returnable === true, `returnable ${String(order(b).returnable)}`), expect(order(b).cancellable === false, "a delivered order is cancellable")) },
+      },
+      {
+        id: "not-returnable",
+        label: "orders.get 80107 (delivered, not returnable)",
+        request: () => tool("orders.get", { order_id: "80107" }, MANY_ORDERS_CUSTOMER),
+        expected: { status: 200, check: (b) => expect(order(b).returnable === false, `returnable ${String(order(b).returnable)}`) },
+      },
+    ],
   },
   {
     id: "order-detail",

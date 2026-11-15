@@ -17,7 +17,7 @@ import { responseBody } from "./stream";
 export type Mode = "generate" | "embed";
 
 export const MODEL_CLASSES = [
-  { name: "auto", note: "the gateway's choice (default): local first today, cloud as fallback" },
+  { name: "auto", note: "the gateway's choice (default): any provider, in the order /v1/capabilities shows" },
   { name: "local", note: "our own model servers only; the prompt never leaves the network; free" },
   { name: "cloud", note: "cloud providers only (Gemini, Anthropic, OpenAI)" },
 ] as const;
@@ -725,12 +725,9 @@ export const SCENARIOS: readonly Scenario[] = [
     shared: { status: 422, code: "validation_error" },
     note: "More than 500 messages: 422 before any provider is called.",
   },
-
-  // ---- known gaps: one row per open bug with a live repro (bugs/README.md). It
-  // asserts what the contract promises, so it fails until the gateway fix lands.
   {
-    id: "gap-gemini-thinking-cap",
-    group: "known gaps",
+    id: "gemini-thinking-cap",
+    group: "contract edges",
     bug: "MG-011",
     label: "Gemini finishes within max_tokens 300",
     method: "POST",
@@ -742,8 +739,11 @@ export const SCENARIOS: readonly Scenario[] = [
       cache: false,
     },
     local: { status: 200, check: (b) => expect(b.finish_reason === "stop", `finish_reason ${String(b.finish_reason)}: thinking used up the cap`) },
-    note: "The integration guide says 300 is enough; Gemini's thinking spends it all and the answer is cut off. Needs a Gemini key; under a cent.",
+    note: "The integration guide says 300 is enough; with thinking on, Gemini spent it all and the answer was cut off (fixed: thinking_budget 0). Needs a Gemini key; under a cent.",
   },
+
+  // ---- known gaps: one row per open bug with a live repro (bugs/README.md). It
+  // asserts what the contract promises, so it fails until the gateway fix lands.
 ];
 
 export function expectationFor(scenario: Scenario, environment: string | null): Expectation {

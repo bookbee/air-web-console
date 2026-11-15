@@ -12,7 +12,12 @@ Gateway** tab (2026-11-15). Process, statuses and severities are in
 
 ## Index
 
-No open reports. Every contract simulation passes against `827aaeb`.
+Every contract simulation passes against `827aaeb` and again against
+`baec19d` (SIT 2026-11-15, 31/31). Found by direct calls beyond the suite:
+
+| ID | Severity | Status | Title |
+|---|---|---|---|
+| [TG-001](TG-001-idempotency-key-replays-other-customers-result.md) | High | resolved (`3bceec1`, deployed to `:8084`) · verified | A reused `Idempotency-Key` replays another customer's execution as `done` |
 
 ## Test setup
 

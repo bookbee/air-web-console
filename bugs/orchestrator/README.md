@@ -19,6 +19,16 @@ Process, statuses and severities are in [../README.md](../README.md).
 | [OR-004](OR-004-unknown-session-and-proposal-silent.md) | Medium | part 1 verified · part 2 wont-fix (design) | An unknown `session_id`/`proposal_id` is silently ignored with 200 |
 | [OR-005](OR-005-minor-items.md) | Low | verified (a,b,c,e) · d wont-fix | Minor: blank message billed, invalid `output_schema`, `allow_routes: []`, readiness, auth order |
 | [OR-006](OR-006-brand-name-defaults-to-air.md) | Low | open | Customer replies call the business "AIR" while answering from Brightcart's knowledge base |
+| [OR-007](OR-007-not-found-read-trips-breaker.md) | High | fixed (working tree) · verified | A read's `404 not_found` counts as a gateway failure: wrong answer, degraded turn, and five of them open the breaker for every customer |
+| [OR-008](OR-008-allow-routes-ignored.md) | Medium | fixed (working tree) · verified | `options.allow_routes` is accepted but never applied: `["rag"]` still looks up orders |
+| [OR-009](OR-009-assistant-disowns-completed-cancel.md) | High | fixed (`customer_care:v3`) · verified (residuals in OR-014) | After a confirmed cancellation the next turn says it wasn't done |
+| [OR-010](OR-010-proposing-turn-drops-rest-of-message.md) | Medium | open (design-level) | A proposing turn answers only the proposal; the rest of the message is dropped |
+| [OR-011](OR-011-gateway-down-not-degraded.md) | Low | fixed (working tree) · verified · "always degraded?" awaiting the user | With air-tools-gateway down, turns report `ok` and `degraded: []` (AC-9) |
+| [OR-012](OR-012-memory-sessions-with-two-workers.md) | High | fixed (working tree) · verified | Default config runs two workers on the in-memory session store: half of all follow-ups get `404 No such session` |
+| [OR-013](OR-013-minor-validation-items.md) | Low | a, b fixed (working tree) · verified · c by design | Minor: `confirm.approve` accepts `"yes"`, malformed JSON is a 422 naming field "16", oversize body 400 |
+| [OR-014](OR-014-v3-residuals.md) | Medium | fixed (planner:v2, customer_care:v4) · verified | `customer_care:v3` residuals: a cancel plus a question loses the cancel and says it can't change orders; invented cancellation dates; one injection reply |
+| [OR-015](OR-015-degraded-planner-answers-claim-actions.md) | High | fixed (REQ-PLN-017) · verified by origin | When the planner times out, the answer asks to confirm a change never proposed, or says a lookup is running |
+| [OR-016](OR-016-unsourced-policy-figures.md) | Medium | b closed · a deferred (waits on RAG sources) · c open, unscheduled | Unsourced refund times ("5 to 10 working days"); an already-cancelled order gets a vague "not possible, e.g. once shipped" |
 
 ## Test setup
 

@@ -6,7 +6,7 @@
 | **Severity** | Medium |
 | **Service** | air-model-gateway @ `4dd28b7` (revision `4dd28b76537b`, clean) |
 | **Found** | 2026-10-26, live calls (demo preparation in the console) |
-| **Console scenario** | `gap-gemini-thinking-cap` (Model Gateway tab, *known gaps*) |
+| **Console scenario** | `gemini-thinking-cap` (Model Gateway tab, *contract edges*; moved out of *known gaps* 2026-11-15 after passing at `6e78609`) |
 
 ## Summary
 

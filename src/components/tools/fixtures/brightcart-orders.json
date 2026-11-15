@@ -85,6 +85,142 @@
       ],
       "tracking": null,
       "returnable": false
+    },
+    {
+      "order_id": "80101",
+      "customer_id": "cust_1003",
+      "placed_at": "2026-11-14",
+      "status": "confirmed",
+      "total": { "amount": "3499.00", "currency": "INR" },
+      "expected_delivery": "2026-11-20",
+      "items": [
+        {
+          "name": "Cast iron skillet, 30 cm",
+          "qty": 1,
+          "price": { "amount": "3499.00", "currency": "INR" }
+        }
+      ],
+      "tracking": null,
+      "returnable": false
+    },
+    {
+      "order_id": "80102",
+      "customer_id": "cust_1003",
+      "placed_at": "2026-11-13",
+      "status": "packed",
+      "total": { "amount": "598.00", "currency": "INR" },
+      "expected_delivery": "2026-11-19",
+      "items": [
+        {
+          "name": "Bamboo cutting board",
+          "qty": 2,
+          "price": { "amount": "299.00", "currency": "INR" }
+        }
+      ],
+      "tracking": null,
+      "returnable": false
+    },
+    {
+      "order_id": "80103",
+      "customer_id": "cust_1003",
+      "placed_at": "2026-11-11",
+      "status": "confirmed",
+      "total": { "amount": "1150.00", "currency": "INR" },
+      "expected_delivery": "2026-11-18",
+      "items": [
+        {
+          "name": "Glass storage jars, set of 6",
+          "qty": 1,
+          "price": { "amount": "850.00", "currency": "INR" }
+        },
+        {
+          "name": "Measuring spoon set",
+          "qty": 1,
+          "price": { "amount": "300.00", "currency": "INR" }
+        }
+      ],
+      "tracking": null,
+      "returnable": false
+    },
+    {
+      "order_id": "80104",
+      "customer_id": "cust_1003",
+      "placed_at": "2026-11-09",
+      "status": "in_transit",
+      "total": { "amount": "2199.00", "currency": "INR" },
+      "expected_delivery": "2026-11-17",
+      "items": [
+        {
+          "name": "Electric kettle, 1.5 L",
+          "qty": 1,
+          "price": { "amount": "2199.00", "currency": "INR" }
+        }
+      ],
+      "tracking": {
+        "carrier": "Delhivery",
+        "status": "in_transit",
+        "last_update": "2026-11-14T17:45:00Z"
+      },
+      "returnable": false
+    },
+    {
+      "order_id": "80105",
+      "customer_id": "cust_1003",
+      "placed_at": "2026-11-05",
+      "status": "cancelled",
+      "total": { "amount": "749.00", "currency": "INR" },
+      "expected_delivery": null,
+      "items": [
+        {
+          "name": "Cotton apron",
+          "qty": 1,
+          "price": { "amount": "749.00", "currency": "INR" }
+        }
+      ],
+      "tracking": null,
+      "returnable": false
+    },
+    {
+      "order_id": "80106",
+      "customer_id": "cust_1003",
+      "placed_at": "2026-10-28",
+      "status": "delivered",
+      "total": { "amount": "1299.00", "currency": "INR" },
+      "expected_delivery": "2026-11-02",
+      "items": [
+        {
+          "name": "Knife block set",
+          "qty": 1,
+          "price": { "amount": "1299.00", "currency": "INR" }
+        }
+      ],
+      "tracking": {
+        "carrier": "BlueDart",
+        "status": "delivered",
+        "last_update": "2026-11-02T10:15:00Z"
+      },
+      "returnable": true
+    },
+    {
+      "order_id": "80107",
+      "customer_id": "cust_1003",
+      "placed_at": "2026-09-20",
+      "status": "delivered",
+      "total": { "amount": "450.00", "currency": "INR" },
+      "expected_delivery": "2026-09-25",
+      "items": [
+        {
+          "name": "Dish drying rack",
+          "qty": 1,
+          "price": { "amount": "450.00", "currency": "INR" }
+        }
+      ],
+      "tracking": {
+        "carrier": "Ekart",
+        "status": "delivered",
+        "last_update": "2026-09-25T09:00:00Z"
+      },
+      "returnable": false
     }
   ]
 }

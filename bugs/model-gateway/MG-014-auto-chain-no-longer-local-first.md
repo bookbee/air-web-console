@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | fixed `0ba546c` (branch `fix/restore-routing-order`, pushed) · verified in code, **not yet deployed** |
+| **Status** | closed: by decision. `6e78609` makes `auto` cloud-first, on purpose |
 | **Severity** | Medium |
 | **Service** | air-model-gateway @ `1fa80de` ("Minor updates", `deploy/routing.yaml` only) |
 | **Found** | 2026-11-14, code reading and the gateway's own test suite (SIT) |
@@ -79,3 +79,11 @@ gateway still reports revision `fc741714427b`, and a default `/v1/generate`
 was served by `anthropic:claude-haiku-4-5`. Close as `verified` after the
 gateway is rebuilt from a build containing `0ba546c` and a default call is
 served by Ollama.
+
+**Decision (2026-11-15, the user, relayed by the air-model-gateway session):**
+`6e78609` ("SIT changes.", develop, pushed) sets the default `auto` chain to
+`gemini-2.5-flash → claude-haiku-4-5 → gpt-4o-mini → ollama llama3.2:3b`:
+local is the last rung, not the first. This deliberately reverses `0ba546c`,
+and a gateway test pins it. `local`, the classifier overrides, `cloud` and the
+embedding names are unchanged. Not a bug: don't re-file it. This console's `auto`
+note no longer states an order (it points at `/v1/capabilities`).

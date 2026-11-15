@@ -17,6 +17,7 @@ SIT (2026-11-14). Process, statuses and severities are in [../README.md](../READ
 | [RG-001](RG-001-malformed-json-422-before-auth.md) | Low | open | Malformed JSON is a 422 naming field "9", and is answered before the key is checked |
 | [RG-002](RG-002-lax-top-k-coercion.md) | Low | open | `top_k` accepts `true`, `"5"` and `5.0` (lax coercion), though the contract types it integer |
 | [RG-003](RG-003-blank-query-unbounded-user-id.md) | Medium | open | A whitespace-only query is embedded and answered with match-level scores; `user_id` has no length cap |
+| [RG-004](RG-004-no-relevance-floor.md) | Medium | open | No relevance floor: nonsense queries return a full `top_k` at genuine-looking scores |
 
 ## Test setup
 
