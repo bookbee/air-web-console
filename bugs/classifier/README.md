@@ -21,6 +21,8 @@ Process, statuses and severities are in [../README.md](../README.md).
 | [CL-004](CL-004-t2-ready-while-gateway-local-down.md) | Medium | open (design-level, agreed) | T2 reports ready/available while the gateway's `local` provider is down |
 | [CL-005](CL-005-lexicon-t1-overconfident.md) | Medium | verified | Lexicon-only T1 answers sarcasm with 0.92 confidence, not marked degraded |
 | [CL-006](CL-006-minor-items.md) | Low | verified (a–d, h, i) · e–g fixed, tests only | Minor: 403 vs 401, auth order, PII kinds, summary trust, cached usage, `degraded` semantics |
+| [CL-007](CL-007-cascade-spends-budget-on-slow-t2.md) | Medium | open | The ladder spends the whole budget on a T2 that can't finish, so T3 never runs |
+| [CL-008](CL-008-minor-input-items.md) | Low | open | Minor: whitespace text classified, Aadhaar as phone / PAN missed, oversize body 400, metadata echoed |
 
 ## Test setup
 
