@@ -1,4 +1,4 @@
-air-tools-gateway simulation run · 2026-11-16T12:14:41.943Z
+air-tools-gateway simulation run · 2026-11-16T13:03:53.176Z
 console http://host.docker.internal:3000 · target local · gateway http://host.docker.internal:8084 · direct http://host.docker.internal:8084
 health {"status":"ok"} · fixture checks on · writes on
 fixtures match ../air-tools-gateway/fixtures
