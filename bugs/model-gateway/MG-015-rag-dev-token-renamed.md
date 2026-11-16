@@ -89,3 +89,8 @@ revision `6e78609…`, `/v1/ready` with ollama and gemini true, RAG `ready: true
 `ready: true`, the gateway reachable, but `document_count: 0`, "index is
 empty". The 401 and the Ollama URL are fixed. What's left is to re-create RAG
 seeded, then run `make rag-check`.
+
+## Resolution
+
+Verified 2026-11-16: air-rag-service `84ae6c8` starts ready against the
+gateway at `85afed6` (`document_count: 29`), and `make rag-check` passes.

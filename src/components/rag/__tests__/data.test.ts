@@ -20,6 +20,7 @@ import {
   tally,
   viaConsole,
   type Citation,
+  type Scenario,
 } from "../data";
 import { RAG_PRESETS } from "../demo";
 
@@ -192,8 +193,9 @@ describe("scenarios", () => {
   });
 
   it("tally a passing gap as fixed, not as a contract pass", () => {
-    const gap = SCENARIOS.find((s) => s.bug === "RG-002")!;
     const contract = SCENARIOS.find((s) => s.id === "health")!;
+    // No report is open, so no row is in the group now: tally still has to handle one.
+    const gap: Scenario = { ...contract, id: "gap-example", group: "known gaps", bug: "RG-002" };
     expect(tally([{ scenario: gap, failure: null }, { scenario: contract, failure: "x" }])).toEqual({
       contractPassed: 0,
       contractTotal: 1,

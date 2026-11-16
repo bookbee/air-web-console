@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | open |
+| **Status** | configuration applied locally (2026-11-16) · design question still open |
 | **Severity** | Low |
 | **Service** | air-orchestrator-service, container on `:8081` (repo `feature/model-gateway-migration` @ `ebc637e`), RAG grounding enabled (spec 0011) |
 | **Found** | 2026-11-14, live call through the console (integrated pass 2) |
@@ -49,3 +49,10 @@ The same request's answer names Brightcart, not AIR.
 ## Resolution
 
 _Filled in by the origin._
+
+## Update 2026-11-16
+
+`AIR_ORCHESTRATOR_SERVICE__PROMPTS__PERSONA__BRAND_NAME=Brightcart` added to
+the local, gitignored `.env`; replies now say "Brightcart". `.env.example`
+still ships `AIR`, and the per-tenant question (one deployment serving
+several brands) is unchanged.

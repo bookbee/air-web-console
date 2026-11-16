@@ -31,7 +31,9 @@ statuses and severities are in [../README.md](../README.md).
 | [MG-012](MG-012-failover-path-not-reported.md) | Low | wont-fix (planned: gateway `00-plan.md` §6) | A response doesn't say which models were tried before the one that answered | none (shape is the origin's choice) |
 | [MG-013](MG-013-max-tokens-unbounded.md) | Medium | fixed `fc74171` (branch) · verified | `max_tokens` unbounded (retryable 502); structurally invalid conversations reach a paid provider | none yet (proposed `max-tokens-huge`) |
 | [MG-014](MG-014-auto-chain-no-longer-local-first.md) | Medium | closed: decision (`6e78609`: `auto` cloud-first on purpose) | `1fa80de` made `auto` cloud-only with a duplicate rung, contradicting its comment; 2 gateway tests fail at `HEAD` | none |
-| [MG-015](MG-015-rag-dev-token-renamed.md) | High | open | The consumer rename (`cf7bff1`) changed air-rag-service's dev token too: RAG gets 401, can't seed or retrieve | `make rag-check` |
+| [MG-015](MG-015-rag-dev-token-renamed.md) | High | fixed · **verified** 2026-11-16 | The consumer rename (`cf7bff1`) changed air-rag-service's dev token too: RAG gets 401, can't seed or retrieve | `make rag-check` |
+| [MG-016](MG-016-invalid-schema-retryable-502.md) | Medium | open | A caller's invalid `json_schema` is a retryable 502 on a class (422 when pinned), and the error prints other providers' account state | none yet (proposed `schema-invalid`) |
+| [MG-017](MG-017-minor-items.md) | Low | open | Minor: 429 without `Retry-After`, blank strings embedded, capabilities and ready disagree on providers, conversation may end on an assistant turn | none |
 
 ## Test setup
 

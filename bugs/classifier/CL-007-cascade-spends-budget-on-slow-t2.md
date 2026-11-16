@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | open |
+| **Status** | fixed (working tree, uncommitted) · verified |
 | **Severity** | Medium |
 | **Service** | air-classifier-service @ `335e649` (develop), container on `:8082`; air-model-gateway `cb8a1d2`, Ollama `llama3.2:3b` on CPU |
 | **Found** | 2026-11-15, live calls (direct and from air-orchestrator-service) |
@@ -83,3 +83,36 @@ skipped; orchestrator turns stop showing `classifier_degraded`.
 ## Resolution
 
 _Filled in by the origin._
+
+## Resolution
+
+Fixed 2026-11-16 in the working tree (`pipeline/orchestrator.py`), as
+suggested fixes 1 and 2 combined. The ladder keeps a little latency history
+per rung (`_Pace`). A rung is stepped over, only ever for a servable rung
+above it, when:
+
+- it has timed out twice in a row: skipped for 300 s, then probed by one
+  request (`tier.skipped reason=slow_tripped`, response `degraded: true`,
+  like any rung the ladder could not use); or
+- its last run timed out and its usual latency plus the next rung's does not
+  fit the request's remaining budget (`reason=slow_for_budget`, not
+  `degraded`: the caller's budget chose the shorter ladder).
+
+A rung that answered last time is never skipped, and a timeout cut short by
+a nearly spent budget does not count against the rung. The history is per
+worker process, so each worker pays two slow requests to learn it. Seven
+tests in `tests/unit/test_orchestrator.py` ("A rung that keeps timing out").
+
+Verified 2026-11-16 on the rebuilt container (host Ollama on an Intel CPU,
+where `llama3.2:3b` cannot answer in 4 s): at the orchestrator's 3.5 s
+budget, calls 1–2 are `t1_classifier` degraded, every later one is
+`t3_cloud_llm` in 1.5–3.3 s with an intent. Orchestrator turns now show
+`classify: ok (… intent=order_tracking …)`.
+
+Not done: `/v1/ready` still reports `t2_local_llm` ready while it is being
+skipped (CL-004's decision). Related: CL-009.
+
+Pre-existing on clean `develop`, unrelated: `ruff format --check` fails on 5
+files, and `tests/eval/test_golden_set.py` fails its T1 cases on a host with
+no ONNX model (`/opt/models` is empty in the container too, so T1 is the
+lexicon and nearly every text escalates to a paid tier).

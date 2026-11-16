@@ -18,6 +18,8 @@ Every contract simulation passes against `827aaeb` and again against
 | ID | Severity | Status | Title |
 |---|---|---|---|
 | [TG-001](TG-001-idempotency-key-replays-other-customers-result.md) | High | resolved (`3bceec1`, deployed to `:8084`) · verified | A reused `Idempotency-Key` replays another customer's execution as `done` |
+| [TG-002](TG-002-deep-json-500.md) | Medium | fixed (working tree) · **verified** 2026-11-16 | Deeply nested `arguments` crash the request with a 500 (`RangeError` in `structuredClone`) |
+| [TG-003](TG-003-minor-items.md) | Low | open | Minor: empty `subject` accepted, oversize body says "must be a JSON object", wrong method is 404 |
 
 ## Test setup
 

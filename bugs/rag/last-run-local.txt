@@ -1,7 +1,7 @@
-air-rag-service contract + SIT run · 2026-11-15T05:45:30.370Z
+air-rag-service contract + SIT run · 2026-11-16T12:14:47.900Z
 console http://host.docker.internal:3000 · target local · rag http://host.docker.internal:8087 · direct http://host.docker.internal:8087
 health {"status":"ok","service":"air-rag-service","version":"0.1.0"} · tenant brightcart · index 29 chunks
-sibling ../air-rag-service/sit/queries.json not found: judged against the mirror only
+query set matches ../air-rag-service/sit/queries.json
 
 
 PASS    health           health                       bff    [200]
@@ -22,7 +22,7 @@ PASS    headless         health-no-key                direct [200]
 PASS    headless         no-key                       direct [401]
 PASS    headless         bad-key                      direct [401]
 PASS    headless         capabilities-no-key          direct [401]
-PASS    headless         malformed-json               direct [422]
+PASS    headless         malformed-json               direct [400]
 PASS    headless         request-id-invalid           direct [200]
 SKIP    headless         scope-capabilities           set RAG_SCOPED_KEY to a retrieval:read-only key
 MANUAL  operator         gateway-down-health          RAG_OPERATOR=gateway-down, after: Stop air-model-gateway first (cd ../air-model-gateway && make down).
@@ -58,11 +58,11 @@ PASS    retrieval (SIT)  sit-27                       bff    [200]
 PASS    retrieval (SIT)  sit-28                       bff    [200]
 PASS    retrieval (SIT)  sit-29                       bff    [200]
 PASS    retrieval (SIT)  archived-never-cited         bff    [200]
-OPEN    known gaps       gap-malformed-400            direct [422] RG-001 got 422 validation-error
-OPEN    known gaps       gap-malformed-before-auth    direct [422] RG-001 got 422 validation-error
-OPEN    known gaps       gap-top-k-bool               bff    [200] RG-002 got 200
-OPEN    known gaps       gap-top-k-string             bff    [200] RG-002 got 200
-OPEN    known gaps       gap-blank-query              bff    [200] RG-003 got 200
-OPEN    known gaps       gap-user-id-bounded          bff    [200] RG-003 got 200
+PASS    headless         malformed-400                direct [400]
+PASS    headless         malformed-before-auth        direct [401]
+PASS    rejections       top-k-bool                   bff    [422]
+PASS    rejections       top-k-string                 bff    [422]
+PASS    rejections       query-blank                  bff    [422]
+PASS    rejections       user-id-bounded              bff    [422]
 
-contract 50/50 passed · known gaps open 6
+contract 56/56 passed · known gaps open 0

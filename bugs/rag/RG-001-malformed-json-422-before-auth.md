@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | open |
+| **Status** | fixed (working tree, uncommitted) · verified |
 | **Severity** | Low |
 | **Service** | air-rag-service @ `f5f2882`, container `air-rag-service:local` on `:8087` |
 | **Found** | 2026-11-14, live call (RAG tab SIT) |
@@ -63,3 +63,12 @@ gaps*, and change the `malformed-json` row to expect 400 only.
 ## Resolution
 
 _Filled in by the origin._
+
+## Resolution
+
+Fixed 2026-11-16 in the air-rag-service working tree. `api/errors.py`: a body error on a keyed route with no valid key is `401 missing-api-key`; `json_invalid` is `400 malformed-request`. Unit tests added
+in `tests/unit/test_retrieval_route.py`; `docs/openapi.json` regenerated;
+ruff, mypy and all tests pass.
+
+Verified 2026-11-16 on the rebuilt container: `make rag-check` 56/56, and
+this report's rows moved out of *known gaps* in `src/components/rag/data.ts`.

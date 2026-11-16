@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | open |
+| **Status** | fixed (working tree, uncommitted) · verified |
 | **Severity** | Medium |
 | **Service** | air-rag-service @ `705f871` (develop), container on `:8087`, seeded from `sit/corpus` (29 chunks), embeddings `local-768-v1` |
 | **Found** | 2026-11-15, live calls straight to the service (SIT 2026-11-15) |
@@ -70,3 +70,12 @@ first.
 ## Resolution
 
 _Filled in by the origin._
+
+## Resolution
+
+Fixed 2026-11-16 in the air-rag-service working tree. `config.py` `retrieval.min_score` (default 0.5, `AIR_RAG_SERVICE__RETRIEVAL__MIN_SCORE`, 0 turns it off), applied in `api/v1/retrieval.py`. Calibrated on the SIT corpus for `local-768-v1`: the weakest correct top hit is 0.545; "aaaa", SQL, "hi", "capital of France" and "Where is order 48213?" now return nothing. Still returned: three emoji (one hit, 0.52), "What are my recent orders?" (five hits, 0.50–0.54), a crypto question (one, 0.54). The Hindi refund query still misses the returns policy (one unrelated hit, 0.52): a multilingual embedding model is the real fix, and the floor is a threshold on one model's cosine, so recalibrate it when the model changes. Unit tests added
+in `tests/unit/test_retrieval_route.py`; `docs/openapi.json` regenerated;
+ruff, mypy and all tests pass.
+
+Verified 2026-11-16 on the rebuilt container: `make rag-check` 56/56, and
+this report's rows moved out of *known gaps* in `src/components/rag/data.ts`.

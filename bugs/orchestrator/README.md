@@ -18,7 +18,7 @@ Process, statuses and severities are in [../README.md](../README.md).
 | [OR-003](OR-003-classifier-spend-invisible.md) | Medium | verified | Classify-stage spend left out of `usage`, uncapped, and allowed to use the whole deadline |
 | [OR-004](OR-004-unknown-session-and-proposal-silent.md) | Medium | part 1 verified · part 2 wont-fix (design) | An unknown `session_id`/`proposal_id` is silently ignored with 200 |
 | [OR-005](OR-005-minor-items.md) | Low | verified (a,b,c,e) · d wont-fix | Minor: blank message billed, invalid `output_schema`, `allow_routes: []`, readiness, auth order |
-| [OR-006](OR-006-brand-name-defaults-to-air.md) | Low | open | Customer replies call the business "AIR" while answering from Brightcart's knowledge base |
+| [OR-006](OR-006-brand-name-defaults-to-air.md) | Low | configuration applied locally · design question open | Customer replies call the business "AIR" while answering from Brightcart's knowledge base |
 | [OR-007](OR-007-not-found-read-trips-breaker.md) | High | fixed (working tree) · verified | A read's `404 not_found` counts as a gateway failure: wrong answer, degraded turn, and five of them open the breaker for every customer |
 | [OR-008](OR-008-allow-routes-ignored.md) | Medium | fixed (working tree) · verified | `options.allow_routes` is accepted but never applied: `["rag"]` still looks up orders |
 | [OR-009](OR-009-assistant-disowns-completed-cancel.md) | High | fixed (`customer_care:v3`) · verified (residuals in OR-014) | After a confirmed cancellation the next turn says it wasn't done |
@@ -29,6 +29,10 @@ Process, statuses and severities are in [../README.md](../README.md).
 | [OR-014](OR-014-v3-residuals.md) | Medium | fixed (planner:v2, customer_care:v4) · verified | `customer_care:v3` residuals: a cancel plus a question loses the cancel and says it can't change orders; invented cancellation dates; one injection reply |
 | [OR-015](OR-015-degraded-planner-answers-claim-actions.md) | High | fixed (REQ-PLN-017) · verified by origin | When the planner times out, the answer asks to confirm a change never proposed, or says a lookup is running |
 | [OR-016](OR-016-unsourced-policy-figures.md) | Medium | b closed · a deferred (waits on RAG sources) · c open, unscheduled | Unsourced refund times ("5 to 10 working days"); an already-cancelled order gets a vague "not possible, e.g. once shipped" |
+| [OR-017](OR-017-rate-limit-never-enforced.md) | Medium | open (report only, user decision) | The configured rate limit (120 rpm, burst 20, per-key `rate_limit_rpm`) is never enforced: 150 concurrent turns, 150 × 200 |
+| [OR-018](OR-018-lookup-turns-skip-knowledge-base.md) | Medium | fixed (working tree) · **verified** 2026-11-16 (`REQ-PLN-015` revised) | A turn with an order lookup never searched the knowledge base: "my orders, and how do refunds work?" lost its policy half |
+| [OR-019](OR-019-citation-marker-without-source.md) | Medium | fixed (working tree) · **verified** 2026-11-16 · residual with OR-016a | An answer cites `[1]` when the turn carried no sources |
+| [OR-020](OR-020-minor-items.md) | Low | open | Minor: `grounded` always false, stray line in refused cancels, tight deadline blamed on the tools gateway, invented postcode check, anonymous-orders wording, "customer message" on the business channel, PAN/CVV unmasked, 422 for text/plain |
 
 ## Test setup
 

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | open |
+| **Status** | fixed (working tree, uncommitted) · verified |
 | **Severity** | Medium |
 | **Service** | air-rag-service @ `f5f2882`, container `air-rag-service:local` on `:8087` |
 | **Found** | 2026-11-14, live call (RAG tab SIT) |
@@ -56,3 +56,12 @@ Both known-gap rows pass; then move them out of *known gaps*.
 ## Resolution
 
 _Filled in by the origin._
+
+## Resolution
+
+Fixed 2026-11-16 in the air-rag-service working tree. `schemas/retrieval.py`: a whitespace-only `query` is 422; `user_id` is capped at 256. Unit tests added
+in `tests/unit/test_retrieval_route.py`; `docs/openapi.json` regenerated;
+ruff, mypy and all tests pass.
+
+Verified 2026-11-16 on the rebuilt container: `make rag-check` 56/56, and
+this report's rows moved out of *known gaps* in `src/components/rag/data.ts`.
