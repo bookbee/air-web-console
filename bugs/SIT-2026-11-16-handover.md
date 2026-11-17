@@ -202,6 +202,17 @@ Found while doing it:
 
 Still not done: anything on a real GCP project.
 
+Later the same day, the orchestrator's front door was added (decision: only the shop's
+backend calls the orchestrator, over a private address). Orchestrator spec 0016
+(`REQ-FDR-…`) states what the service and the load balancer each guarantee; the
+service's half is tested in its `make check` (every route declared public or
+internal, proxy headers never change the caller, no CORS). The infrastructure half is
+an internal GKE Gateway (`gke-l7-rilb`) in the shared chart, and a Terraform module
+for the proxy-only subnet, the private IP and a Cloud Armor rate limit.
+`make gke-validate` now also checks the rendered front door for UAT and prod
+(7 checks each, all pass). `make gke-smoke-front-door` is ready for UAT; it was tried
+only against the service directly. No new bugs.
+
 ## Next steps
 
 1. **Review and commit.** Seven repositories have uncommitted changes (table above),

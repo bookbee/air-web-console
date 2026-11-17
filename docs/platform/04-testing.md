@@ -21,7 +21,7 @@ Run from the repository's own folder. None of these needs Docker or a network.
 
 | Repository | First time | Gate | Baseline on 2026-11-16 |
 | --- | --- | --- | --- |
-| air-orchestrator-service | `make dev` | `make check` | 572 passed, 3 skipped; 168 requirements traced, 22 declared gaps |
+| air-orchestrator-service | `make dev` | `make check` | 575 passed, 3 skipped; 175 requirements traced, 28 declared gaps (on 2026-11-17, after spec 0016) |
 | air-classifier-service | `make dev` | `make check` | **Fails**, see the note below. Lint and types clean; 1,105 passed, 4 skipped, 5 failed (not counting live tests) |
 | air-model-gateway | `make dev` | `make check` (`make verify` for everything CI runs) | 362 passed, coverage 95% |
 | air-rag-service | `make dev` | `make check` | 78 passed |
@@ -69,7 +69,8 @@ Start the platform first ([03-local-setup.md](03-local-setup.md)).
 | air-orchestrator-service | `make sit-tools` | The orchestrator's tools-gateway client against the real gateway | None |
 | air-orchestrator-service | `make prompt-review`, `make planner-eval` | Prompt and planner behaviour on real models. Read the transcripts | Paid model calls |
 | air-model-gateway | `make integration-up integration-test` | Two replicas behind a proxy with staging configuration | None |
-| air-infrastructure-service | `make gke-validate` | Both Helm charts lint; every service's manifests for UAT, prod and kind pass their schemas; Terraform validates | None (needs helm, kubeconform, terraform) |
+| air-infrastructure-service | `make gke-validate` | Both Helm charts lint; every service's manifests for UAT, prod and kind pass their schemas; the orchestrator's front door checked for UAT and prod; Terraform validates | None (needs helm, kubeconform, terraform) |
+| air-infrastructure-service | `make gke-smoke-front-door` | The orchestrator's front door in UAT: a turn answers, internal routes are a 404, streaming isn't buffered, the rate limit answers 429 | Run from inside the VPC; `RATE_BURST` spends that minute's allowance |
 | air-infrastructure-service | `make kind-up kind-test` | All five services on a local Kubernetes cluster with production values, smoke-tested end to end | Starts a kind cluster; `make kind-down` removes it |
 
 ## 4. Layer 3: the console's contract suites
@@ -154,5 +155,8 @@ Be aware of these when planning QA:
   air-infrastructure-service deploys all five services to a local Kubernetes cluster
   with the production charts and values, and smoke-tests them end to end (17 gateway
   checks, then each service and one conversation turn). Nothing has been deployed to
-  GCP yet.
+  GCP yet. The orchestrator's front door (an internal load balancer) can't run on
+  kind: it is checked on its rendered manifests by `make gke-validate`, and
+  `make gke-smoke-front-door` proves it in UAT.
 - **Rate limiting in the orchestrator** is configured but not enforced (bug OR-017).
+  In GCP the front door's Cloud Armor policy limits per client IP.
