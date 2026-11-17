@@ -20,6 +20,7 @@ Every contract simulation passes against `827aaeb` and again against
 | [TG-001](TG-001-idempotency-key-replays-other-customers-result.md) | High | resolved (`3bceec1`, deployed to `:8084`) · verified | A reused `Idempotency-Key` replays another customer's execution as `done` |
 | [TG-002](TG-002-deep-json-500.md) | Medium | fixed (working tree) · **verified** 2026-11-16 | Deeply nested `arguments` crash the request with a 500 (`RangeError` in `structuredClone`) |
 | [TG-003](TG-003-minor-items.md) | Low | open | Minor: empty `subject` accepted, oversize body says "must be a JSON object", wrong method is 404 |
+| [TG-004](TG-004-redis-tls-hostname-check-cannot-be-disabled.md) | Medium | open | Redis over TLS can't be used when the certificate doesn't match the host dialled (Memorystore by IP): no CA or host-name setting |
 
 ## Test setup
 

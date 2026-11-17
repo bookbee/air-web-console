@@ -24,6 +24,8 @@ Process, statuses and severities are in [../README.md](../README.md).
 | [CL-007](CL-007-cascade-spends-budget-on-slow-t2.md) | Medium | fixed (working tree) · **verified** 2026-11-16 | The ladder spends the whole budget on a T2 that can't finish, so T3 never runs |
 | [CL-008](CL-008-minor-input-items.md) | Low | open | Minor: whitespace text classified, Aadhaar as phone / PAN missed, oversize body 400, metadata echoed |
 | [CL-009](CL-009-slow-arbiter-discards-primary-verdict.md) | Medium | fixed (working tree) · **verified** 2026-11-16 | A slow second-opinion model takes T3's first answer down with it: 8 s, then the lexicon's verdict or a 503 |
+| [CL-010](CL-010-make-check-red-on-clean-checkout.md) | Medium | open | `make check` is red on a clean checkout (format, five golden cases without the Tier 1 model), and `make test` runs the paid `live` tests |
+| [CL-011](CL-011-doctor-and-make-point-at-old-infra-repo.md) | Low | fixed (working tree, 2026-11-16) · verified | `make doctor` reports Redis down when it is up, and `make up` points at `../air-infra`, which doesn't exist |
 
 ## Test setup
 

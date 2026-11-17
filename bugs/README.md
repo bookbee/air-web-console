@@ -20,8 +20,14 @@ bugs/
 
 Service folders: `model-gateway/` (air-model-gateway), `classifier/`
 (air-classifier-service), `orchestrator/` (air-orchestrator-service),
-`rag/` (air-rag-service) and `tools-gateway/` (air-tools-gateway).
-A cross-service test pass is written up as `SIT-<date>.md` at this level.
+`rag/` (air-rag-service), `tools-gateway/` (air-tools-gateway) and
+`infrastructure/` (air-infrastructure-service).
+A cross-service test pass is written up as `SIT-<date>.md` at this level. The
+latest is [SIT-2026-11-16-handover.md](SIT-2026-11-16-handover.md), which lists
+every open report across the services.
+
+New to the platform? Read [`../docs/platform/04-testing.md`](../docs/platform/04-testing.md)
+first: it explains the test layers and where a bug report fits.
 
 ## IDs
 
@@ -35,6 +41,7 @@ closed as a duplicate or won't-fix.
 | air-orchestrator-service | `OR` |
 | air-rag-service | `RG` |
 | air-tools-gateway | `TG` |
+| air-infrastructure-service | `IN` |
 
 The file name is the ID plus a short kebab-case slug, e.g.
 `MG-001-gemini-nullable-schema.md`. Keep the slug when the title changes.

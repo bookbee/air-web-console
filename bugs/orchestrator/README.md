@@ -33,6 +33,8 @@ Process, statuses and severities are in [../README.md](../README.md).
 | [OR-018](OR-018-lookup-turns-skip-knowledge-base.md) | Medium | fixed (working tree) · **verified** 2026-11-16 (`REQ-PLN-015` revised) | A turn with an order lookup never searched the knowledge base: "my orders, and how do refunds work?" lost its policy half |
 | [OR-019](OR-019-citation-marker-without-source.md) | Medium | fixed (working tree) · **verified** 2026-11-16 · residual with OR-016a | An answer cites `[1]` when the turn carried no sources |
 | [OR-020](OR-020-minor-items.md) | Low | open | Minor: `grounded` always false, stray line in refused cancels, tight deadline blamed on the tools gateway, invented postcode check, anonymous-orders wording, "customer message" on the business channel, PAN/CVV unmasked, 422 for text/plain |
+| [OR-021](OR-021-citation-markers-do-not-match-citation-list.md) | Medium | open | A client can't match the answer's `[n]` markers to `citations`: the answer says `[2]` and the list has one unnumbered entry |
+| [OR-022](OR-022-minor-items.md) | Low | open | Minor: `make up` says "could not probe" on a healthy start, a stored date called "today", an invented "send a bank statement" step, `/v1/query` has no data source yet, the broker probe has no off switch |
 
 ## Test setup
 

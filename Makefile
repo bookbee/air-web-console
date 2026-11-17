@@ -6,13 +6,14 @@ IMAGE   ?= air-web-console
 TAG     ?= local
 
 .DEFAULT_GOAL := help
-.PHONY: help install env dev build start lint typecheck test check gateway-check rag-check tools-check customer-token-key image up down logs clean
+.PHONY: help install env dev build start lint typecheck test check gateway-check rag-check tools-check customer-token-key image up down logs clean \
+	platform-clone platform-env platform-doctor platform-up platform-status platform-down
 
 help: ## Show this help
 	@echo "AIR Web Console (air-web-console) — make <target>"
 	@echo
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) \
-		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 	@echo
 	@echo "Overridable: HOST=$(HOST) PORT=$(PORT)"
 
@@ -79,3 +80,24 @@ logs: ## Tail the Docker container logs
 
 clean: ## Remove node_modules and build artifacts
 	rm -rf node_modules .next
+
+# ---- the whole AIR platform (sibling repositories checked out next to this one) ----
+# Each target runs the sibling repositories' own make targets in the right order; see
+# scripts/platform.sh and docs/platform/03-local-setup.md.
+platform-clone: ## Clone the six sibling AIR repositories next to this one (skips those already there)
+	@bash scripts/platform.sh clone
+
+platform-env: ## Create each repository's .env and wire the services together for local use (env/local/)
+	@bash scripts/platform.sh env
+
+platform-up: ## Start every AIR backend in Docker, in dependency order (creates and wires missing .env files)
+	@bash scripts/platform.sh up
+
+platform-doctor: ## Check this machine and every AIR service; says how to fix what is missing
+	@bash scripts/platform.sh doctor
+
+platform-status: ## Health and readiness of every AIR service
+	@bash scripts/platform.sh status
+
+platform-down: ## Stop every AIR backend (data volumes are kept)
+	@bash scripts/platform.sh down

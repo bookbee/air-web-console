@@ -1,13 +1,98 @@
 # AIR Web Console
 
-*(package/directory identifier: `air-web-console`; also written
-`AIR-Web-Console` where hyphens read better, e.g. slide titles or log
-prefixes — all three names refer to the same project)*
+**Start here.** This repository is the entry point to the AIR platform for developers,
+QA and DevOps. It holds two things:
 
-A Next.js console for hand-testing, integrating with, and evaluating the
-AIR platform services — **air-classifier-service**, **air-orchestrator-service**, **air-model-gateway** —
-individually and as an integrated whole. Send a request, read the decoded
-response, copy the cURL that reproduces it exactly.
+1. **The platform's documentation and bug reports**: what the seven AIR repositories
+   are, how to run all of them on your machine, how they are tested and deployed, and
+   every open issue.
+2. **The console itself**: a Next.js app for hand-testing, integrating with and
+   evaluating each AIR service, alone and together. Send a request, read the decoded
+   response, copy the cURL that reproduces it exactly.
+
+*(package and directory name: `air-web-console`; also written `AIR-Web-Console`
+where hyphens read better. All three names refer to this project.)*
+
+## The AIR platform in one minute
+
+AIR answers a shop customer's questions ("where is my order?", "can I return this?")
+and carries out confirmed changes (cancel an order). A language model writes the
+answers; ordinary backend services around it fetch the facts, enforce the rules and
+keep the model away from anything it could damage.
+
+```mermaid
+flowchart LR
+    you(["You, in a browser"]) --> console["air-web-console :3000<br/>this repository"]
+    console --> orch["air-orchestrator-service :8081<br/>runs each conversation turn"]
+    orch --> clf["air-classifier-service :8082<br/>sentiment, intent, urgency"]
+    orch --> rag["air-rag-service :8087<br/>document search with sources"]
+    orch --> tools["air-tools-gateway :8084<br/>order lookups and changes"]
+    orch --> gw["air-model-gateway :8083<br/>the only path to any model"]
+    clf --> gw
+    rag --> gw
+    gw --> models["Local models (Ollama)<br/>Cloud models (Gemini, Anthropic, OpenAI)"]
+    infra["air-infrastructure-service :8080<br/>local Redis, Postgres, MongoDB"] -.-> clf
+    infra -.-> tools
+```
+
+The console also calls each service directly, to test it alone.
+
+## Where to go next
+
+| You are… | Read, in this order |
+| --- | --- |
+| **New to the project** (anyone) | [Platform overview](docs/platform/01-overview.md) → [AI concepts for backend engineers](docs/platform/02-concepts.md) → [Local setup](docs/platform/03-local-setup.md) |
+| **A developer** (Java, Go, Node, Python) | The three above, then the README of the service you will work on, then its `CLAUDE.md` or `AGENTS.md` (the compact engineering guide) |
+| **QA** | [Local setup](docs/platform/03-local-setup.md) → [Testing guide](docs/platform/04-testing.md) → [`bugs/README.md`](bugs/README.md) |
+| **DevOps** | [Platform overview](docs/platform/01-overview.md), then in air-infrastructure-service: [GCP deployment guide](../air-infrastructure-service/docs/02-gcp-deployment.md) → [GKE runbook](../air-infrastructure-service/docs/03-gke-runbook.md) → [`gke/`](../air-infrastructure-service/gke/README.md), the charts and Terraform for all five services |
+| **Taking the project over** | [Handover notes](docs/platform/05-handover.md): what is finished, what is open, what to do before production |
+
+| Document | What it covers |
+| --- | --- |
+| [docs/platform/01-overview.md](docs/platform/01-overview.md) | The seven repositories, how a message flows through them (diagrams), shared conventions, older names you will still see |
+| [docs/platform/02-concepts.md](docs/platform/02-concepts.md) | LLM, tokens, prompts, RAG, embeddings, tools, planner, guardrails, prompt injection and the rest, each in backend terms |
+| [docs/platform/03-local-setup.md](docs/platform/03-local-setup.md) | From a new machine to the whole platform running; development keys; troubleshooting |
+| [docs/platform/04-testing.md](docs/platform/04-testing.md) | The four test layers, the commands, the end-to-end checklist, how to report a bug |
+| [docs/platform/05-handover.md](docs/platform/05-handover.md) | Status per repository, open items, recommendations for production readiness, a suggested handover session |
+| [bugs/](bugs/README.md) | Every bug found in the AIR services, one file each, with the latest cross-service test report |
+
+## Run the whole platform
+
+Needs Docker (running), Ollama and `make`. Clone this repository into an empty folder;
+it fetches the other six and sets them up. The
+[setup guide](docs/platform/03-local-setup.md) has the details and the troubleshooting
+table.
+
+```bash
+ollama pull llama3.2:3b && ollama pull nomic-embed-text   # the local models, once
+
+make platform-clone       # the six sibling repositories, next to this one
+make platform-up          # create each .env, wire the services together, build and start them
+make up                   # this console, in Docker: http://127.0.0.1:3000
+make platform-doctor      # everything should be green
+```
+
+| Command | Does |
+| --- | --- |
+| `make platform-doctor` | Checks tools, models, checkouts and every service's health and readiness; names the fix for what is missing |
+| `make platform-clone` | Clones any sibling repository that isn't there yet, from where this one was cloned |
+| `make platform-env` | Creates each repository's `.env` from its `.env.example` and appends the local wiring in [`env/local/`](env/local/README.md), which switches on the connections between services. Never overwrites |
+| `make platform-up` | For each repository in dependency order: `.env` as above if it is missing, then `make up` |
+| `make platform-status` | Health and readiness only |
+| `make platform-down` | Stops every backend; data volumes are kept |
+
+These targets run `git clone` and the sibling repositories' own `make` commands, and
+write only untracked `.env` files ([`scripts/platform.sh`](scripts/platform.sh)).
+
+Deploying to UAT or production is DevOps' side: each service builds its own image
+(`make image-push`) and deploys with `make deploy`, using the Helm charts and Terraform
+kept in [air-infrastructure-service](../air-infrastructure-service/gke/README.md).
+
+# The console
+
+A Next.js console for the AIR services: **air-classifier-service**,
+**air-orchestrator-service**, **air-model-gateway**, **air-rag-service** and
+**air-tools-gateway**.
 
 It also doubles as a **reference BFF pattern**: the way this console talks
 to the AIR services — an independent web client authenticating to an API
@@ -28,6 +113,8 @@ Six tabs, one per surface:
 | **System** | all of them | Health, readiness, capabilities, and a log of every call |
 
 ## Quickstart
+
+The console alone, against whichever AIR services are already running:
 
 ```bash
 make install     # npm install
@@ -60,18 +147,24 @@ make build && make start                               # native production build
 make logs                                              # tail the Docker container
 make down                                              # stop the Docker container
 make gateway-check [GATEWAY_TARGET=qa]                 # every Model Gateway scenario, headless, against a live gateway
+make rag-check     [RAG_TARGET=qa]                     # every RAG contract and search scenario
+make tools-check   [TOOLS_TARGET=qa]                   # every Tools Gateway simulation
 ```
 
-`make gateway-check` needs the console serving and a running gateway. It
-writes `bugs/model-gateway/last-run-<target>.txt` and fails on any contract
-scenario failure. It's kept out of `make check` and CI because it calls live
-services, including a few small paid cloud calls. Bugs found in the AIR
+The three `-check` targets need the console serving and the service running. Each
+writes `bugs/<service>/last-run-<target>.txt` and fails on any contract
+scenario failure. They are kept out of `make check` and CI because they call live
+services; `make gateway-check` also makes a few small paid cloud calls. The
+[testing guide](docs/platform/04-testing.md) explains when to run which. Bugs found in the AIR
 services are written up under [`bugs/`](bugs/README.md), and the gateway's
 release/handover gate is
 [`bugs/model-gateway/READINESS.md`](bugs/model-gateway/READINESS.md).
 
 `make help` lists every target, including `image` (build the Docker image
 without starting it) and `clean` (remove `node_modules`/`.next`).
+
+`make dev`, `make check` and the `-check` targets need Node.js 20.9 or later on the
+host (22 LTS recommended). `make up` needs only Docker.
 
 ### In a container
 
@@ -83,12 +176,12 @@ make down
 
 This console is **local development and testing only**, deliberately not
 hardened or optimised for a production deployment. It does not join
-air-infra's `air-net` and does not require air-infra to be running — it
+air-infrastructure-service's `air-net` network and does not require that stack to be running — it
 reaches whatever AIR services are already up (natively or in their own
 containers) through the ports they publish on the host.
 
 Inside a container, `localhost` is the *container*, so `docker-compose.yml`
-re-points the `local` target's three base URLs at `host.docker.internal` —
+re-points the `local` target's five base URLs at `host.docker.internal` —
 verified end-to-end against a host-run air-classifier-service on `:8082`. On Linux,
 `extra_hosts: host.docker.internal:host-gateway` is what makes that
 resolve; start the host-side service with `HOST=0.0.0.0` there if it's
@@ -104,7 +197,7 @@ client bundle at `next build` time.
 
 ## Architecture: the BFF is the trust boundary
 
-None of the three AIR backend services have CORS configured, so a browser
+None of the AIR backend services have CORS configured, so a browser
 cannot call them directly — this console's Node backend-for-frontend
 exists to close that gap. The browser only ever talks to this app's own
 origin:
@@ -119,7 +212,8 @@ Next.js Route Handlers (BFF) — src/app/api/**
    │  2. resolves {baseUrl, apiKey, verifyTls} from server-side .env,
    │     keyed by (service, target name[, channel]) — never from a client header
    ▼
-air-classifier-service / air-orchestrator-service / air-model-gateway   (real X-API-Key attached here, server-side only)
+air-classifier-service / air-orchestrator-service / air-model-gateway /
+air-rag-service / air-tools-gateway        (real X-API-Key attached here, server-side only)
 ```
 
 - **The browser never holds, sends, or receives an upstream API key.**
@@ -237,23 +331,29 @@ credential exactly like an API key, and is never sent to the browser.
 
 ```text
 Dockerfile, docker-compose.yml   local-dev-only container; see "In a container"
+docs/platform/                   the AIR platform's entry documentation (overview, concepts, setup, testing, handover)
+env/local/                       local settings that wire the AIR services together (make platform-env)
 bugs/                            bug reports for the AIR services, one file each (see bugs/README.md)
-tests/                           test setup, and live suites (tests/live/*.live.test.ts) run by make gateway-check
+scripts/platform.sh              make platform-*: clone, configure, start and check every AIR service
+scripts/gen-customer-token-key.mjs   make customer-token-key
+tests/                           test setup, and live suites (tests/live/*.live.test.ts) run by the make *-check targets
 src/
   app/
     api/
       classifier/[...path]/route.ts     proxy to air-classifier-service
       orchestrator/[...path]/route.ts   proxy to air-orchestrator-service (JSON + SSE)
       llm/[...path]/route.ts            proxy to air-model-gateway (JSON, collected SSE, or live NDJSON)
+      rag/[...path]/route.ts            proxy to air-rag-service
+      tools/[...path]/route.ts          proxy to air-tools-gateway (picks the read or execute key from the route)
       config/route.ts                 redacted target catalogue, shipped to the client
       health/route.ts                 ungated liveness probe (Docker HEALTHCHECK)
-      _lib/serviceProxy.ts            the shared, gateway-token-gated handler behind all three
+      _lib/serviceProxy.ts            the shared, gateway-token-gated handler behind all five
     layout.tsx, page.tsx, providers.tsx
   components/
     layout/       Header, TargetBar
     sidebar/       Sidebar (read-only target picker + status)
     shared/        DashboardGrid, ResponseView, JsonViewer, SendRow, …
-    classifier/    orchestrator/     llm/          system/
+    classifier/    orchestrator/     llm/     rag/     tools/     system/
   lib/
     config.ts      server-only .env parsing + resolveService()/toPublicDefaults()
     auth/          gatewayAuth.ts (server-only) + token.ts (pure, unit-tested)

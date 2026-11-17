@@ -1,5 +1,5 @@
-air-rag-service contract + SIT run · 2026-11-16T13:03:59.038Z
-console http://host.docker.internal:3000 · target local · rag http://host.docker.internal:8087 · direct http://host.docker.internal:8087
+air-rag-service contract + SIT run · 2026-11-16T17:06:39.355Z
+console http://127.0.0.1:3000 · target local · rag http://127.0.0.1:8087 · direct http://127.0.0.1:8087
 health {"status":"ok","service":"air-rag-service","version":"0.1.0"} · tenant brightcart · index 29 chunks
 query set matches ../air-rag-service/sit/queries.json
 

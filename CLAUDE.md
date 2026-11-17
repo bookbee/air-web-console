@@ -269,9 +269,30 @@ build on every push and PR.
 
 ## Working in this repo
 
+- This repository is also the **entry point to the whole AIR platform** for new
+  engineers. `README.md` opens with the platform, not the console; `docs/platform/`
+  holds the overview, the AI concepts page, the local setup guide, the testing guide
+  and the handover notes. They describe the sibling repositories, so when a service's
+  port, development key, setup step or status changes, update them in the same
+  change. The DevOps guide lives in
+  `../air-infrastructure-service/docs/02-gcp-deployment.md`.
+- `make platform-clone|env|up|doctor|status|down` (`scripts/platform.sh`) clone the
+  sibling repositories, create their `.env` files, run their own `make up` in
+  dependency order and read their `/v1/health` and `/v1/ready`. The script must stay a
+  thin wrapper: it changes no code elsewhere, and the only files it writes are
+  untracked `.env` files, to which it appends the marked blocks in `env/local/`
+  (`<service>.env`: the local wiring between services, development keys only). It
+  appends automatically only to an `.env` it has just created; an existing one changes
+  only on `make platform-env`. Keep those blocks in step with the services'
+  `.env.example` files, and never put a real secret in `env/local/`.
+- Deployment is not this repository's subject: the Helm charts, Terraform and runbook
+  for all five core services are in `../air-infrastructure-service/gke/` and
+  `docs/03-gke-runbook.md` there. The platform docs here link to them.
+
 - Bugs this console finds in the AIR services are written up under
   `bugs/<service>/` (one `<PREFIX>-<NNN>-<slug>.md` per bug, plus that
   service's `README.md` index) for the owning team to fix and verify.
+  air-infrastructure-service has a folder too (`bugs/infrastructure/`, prefix `IN`).
   `bugs/README.md` is the process (IDs, statuses, severities), and
   `bugs/TEMPLATE.md` is the starting point. Each open bug with a live repro
   has a matching *known gaps* scenario (its `bug` field names the report);
